@@ -1,0 +1,146 @@
+﻿@page "/builder"
+@inject KeyboardConfigInfoExtractor Extractor
+@inject ViaBuilder ViaBuilder
+
+<h1>VIA JSON Builder</h1>
+
+<table class="table-borderless">
+    <tbody>
+        <tr>
+            <td>Name</td>
+            <td></td>
+            <td><input type="text" @bind="@NameTxt" /></td>
+        </tr>
+        <tr>
+            <td>Vendor ID</td>
+            <td></td>
+            <td><input type="text" @bind="@VendorIdTxt" /></td>
+        </tr>
+        <tr>
+            <td>Product ID</td>
+            <td></td>
+            <td><input type="text" @bind="@ProductIdTxt" /></td>
+        </tr>
+        <tr>
+            <td>Lighting</td>
+            <td></td>
+            <td>
+                <select @onchange="OnLightingChanged">
+                    @foreach (var item in LightingList)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Matrix</td>
+            <td>Rows</td>
+            <td><input type="number" @bind="@RowsTxt" /></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>Cols</td>
+            <td><input type="number" @bind="@ColsTxt" /></td>
+        </tr>
+        <tr>
+            <td>Layouts</td>
+            <td>Labels</td>
+            <td><textarea cols="100" rows="1" @bind="@LabelsTxt" /></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td valign="top">Keymap</td>
+            <td><textarea cols="100" rows="10" @bind="@KeymapTxt" /></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="drag-drop-zone">
+    <InputFile OnChange="OnUpload" />
+    @Status
+</div>
+
+<button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
+
+<br />
+<br />
+
+@code{
+    [Inject] IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
+
+    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで config.h / JSONファイルをアップロード";
+    private string Status = DEFAULT_STATUS;
+
+    private string NameTxt { get; set; }
+    private string VendorIdTxt { get; set; }
+    private string ProductIdTxt { get; set; }
+    private string LightingTxt { get; set; } = Lighting.none.ToString();
+    private string RowsTxt { get; set; }
+    private string ColsTxt { get; set; }
+    private string LabelsTxt { get; set; }
+    private string KeymapTxt { get; set; }
+
+    private IEnumerable<string> LightingList = Enum.GetNames(typeof(Lighting));
+
+    private async Task OnUpload(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file == null)
+        {
+            return;
+        }
+
+        this.Status = "Loading...";
+
+        var fileName = file.Name;
+
+        using var reader = new StreamReader(file.Data);
+
+        if (fileName.ToLower().Equals("config.h"))
+        {
+            this.FillProperties(await reader.ReadToEndAsync());
+        }
+        else if (fileName.ToLower().EndsWith(".json"))
+        {
+            this.KeymapTxt = await reader.ReadToEndAsync();
+        }
+
+        this.Status = DEFAULT_STATUS;
+    }
+
+    private void FillProperties(string target)
+    {
+        var info = this.Extractor.Extract(target);
+
+        this.NameTxt = info.Name;
+        this.VendorIdTxt = info.VendorId;
+        this.ProductIdTxt = info.ProductId;
+        this.RowsTxt = info.Rows;
+        this.ColsTxt = info.Cols;
+    }
+
+    private async ValueTask Download()
+    {
+        var context = new JsonBuildingContext
+        {
+            Name = this.NameTxt,
+            VendorId = this.VendorIdTxt,
+            ProductId = this.ProductIdTxt,
+            Lighting = this.LightingTxt,
+            Rows = this.RowsTxt,
+            Cols = this.ColsTxt,
+            Labels = this.LabelsTxt,
+            Keymap = this.KeymapTxt,
+        };
+
+        var json = this.ViaBuilder.Build(context);
+
+        await this.BlazorDownloadFileService.DownloadFileFromText("via.json", json, "application/octet-stream");
+    }
+
+    private void OnLightingChanged(ChangeEventArgs e)
+    {
+        this.LightingTxt = e.Value.ToString();
+    }
+}
