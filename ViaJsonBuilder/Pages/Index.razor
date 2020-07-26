@@ -1,4 +1,6 @@
 ﻿@page "/"
+@inject KeyboardConfigInfoExtractor Extractor
+@inject ViaBuilder Builder
 
 <h1>VIA JSON Builder</h1>
 
@@ -7,23 +9,23 @@
         <tr>
             <td>Name</td>
             <td></td>
-            <td><input type="text" @bind="@Name" /></td>
+            <td><input type="text" @bind="@NameTxt" /></td>
         </tr>
         <tr>
             <td>Vendor ID</td>
             <td></td>
-            <td><input type="text" @bind="@VendorId" /></td>
+            <td><input type="text" @bind="@VendorIdTxt" /></td>
         </tr>
         <tr>
             <td>Product ID</td>
             <td></td>
-            <td><input type="text" @bind="@ProductId" /></td>
+            <td><input type="text" @bind="@ProductIdTxt" /></td>
         </tr>
         <tr>
             <td>Lighting</td>
             <td></td>
             <td>
-                <select @onchange="Select">
+                <select @onchange="OnLightingChanged">
                     @foreach (var item in LightingList)
                     {
                         <option value="@item">@item</option>
@@ -34,22 +36,22 @@
         <tr>
             <td>Matrix</td>
             <td>Rows</td>
-            <td><input type="number" @bind="@Rows" /></td>
+            <td><input type="number" @bind="@RowsTxt" /></td>
         </tr>
         <tr>
             <td></td>
             <td>Cols</td>
-            <td><input type="number" @bind="@Cols" /></td>
+            <td><input type="number" @bind="@ColsTxt" /></td>
         </tr>
         <tr>
             <td>Layouts</td>
             <td>Labels</td>
-            <td><textarea cols="100" rows="1" @bind="@Labels" /></td>
+            <td><textarea cols="100" rows="1" @bind="@LabelsTxt" /></td>
         </tr>
         <tr>
             <td></td>
             <td valign="top">Keymap</td>
-            <td><textarea cols="100" rows="10" @bind="@Keymap" /></td>
+            <td><textarea cols="100" rows="10" @bind="@KeymapTxt" /></td>
         </tr>
     </tbody>
 </table>
@@ -59,7 +61,7 @@
     @Status
 </div>
 
-<button class="btn-primary" @onclick=@(async () => await Download())>JSON ダウンロード</button>
+<button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
 
 <br />
 <br />
@@ -70,18 +72,14 @@
     private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで config.h / JSONファイルをアップロード";
     private string Status = DEFAULT_STATUS;
 
-    private readonly Regex _nameRex = new Regex(@".*(\r|\n).*?PRODUCT\s+(?<name>.*?)(\r|\n).*");
-    private readonly Regex _vendorRex = new Regex(@".*(\r|\n).*?VENDOR_ID\s+(?<vendor>.*)(\r|\n).*");
-    private readonly Regex _productRex = new Regex(@".*(\r|\n).*?PRODUCT_ID\s+(?<product>.*)(\r|\n).*");
-
-    private string Name { get; set; }
-    private string VendorId { get; set; }
-    private string ProductId { get; set; }
-    private string Lighting { get; set; } = ViaJsonBuilder.Models.Via.Lighting.none.ToString();
-    private int Rows { get; set; }
-    private int Cols { get; set; }
-    private string Labels { get; set; }
-    private string Keymap { get; set; }
+    private string NameTxt { get; set; }
+    private string VendorIdTxt { get; set; }
+    private string ProductIdTxt { get; set; }
+    private string LightingTxt { get; set; } = Lighting.none.ToString();
+    private string RowsTxt { get; set; }
+    private string ColsTxt { get; set; }
+    private string LabelsTxt { get; set; }
+    private string KeymapTxt { get; set; }
 
     private IEnumerable<string> LightingList = Enum.GetNames(typeof(Lighting));
 
@@ -105,7 +103,7 @@
         }
         else if (fileName.ToLower().EndsWith(".json"))
         {
-            this.Keymap = await reader.ReadToEndAsync();
+            this.KeymapTxt = await reader.ReadToEndAsync();
         }
 
         this.Status = DEFAULT_STATUS;
@@ -113,87 +111,36 @@
 
     private void FillProperties(string target)
     {
+        var info = this.Extractor.Extract(target);
 
-        if (this._nameRex.IsMatch(target))
-        {
-            this.Name = this._nameRex.Match(target).Groups["name"].Value.Trim();
-        }
-
-        if (this._vendorRex.IsMatch(target))
-        {
-            this.VendorId = this._vendorRex.Match(target).Groups["vendor"].Value.Trim();
-        }
-
-        if (this._productRex.IsMatch(target))
-        {
-            this.ProductId = this._productRex.Match(target).Groups["product"].Value.Trim();
-        }
+        this.NameTxt = info.Name;
+        this.VendorIdTxt = info.VendorId;
+        this.ProductIdTxt = info.ProductId;
+        this.RowsTxt = info.Rows;
+        this.ColsTxt = info.Cols;
     }
 
     private async ValueTask Download()
     {
-        var matrix = new Matrix
+        var context = new JsonBuildingContext
         {
-            Rows = this.Rows,
-            Cols = this.Cols,
+            Name = this.NameTxt,
+            VendorId = this.VendorIdTxt,
+            ProductId = this.ProductIdTxt,
+            Lighting = this.LightingTxt,
+            Rows = this.RowsTxt,
+            Cols = this.ColsTxt,
+            Labels = this.LabelsTxt,
+            Keymap = this.KeymapTxt,
         };
 
-        IEnumerable<dynamic> labels = Enumerable.Empty<dynamic>();
-
-        if (this.Labels.HasMeaningfulValue())
-        {
-            var formatted = this.Labels.Split(",")
-                .Select(x =>
-                {
-                    if (x.StartsWith("[") && !x.EndsWith("]"))
-                    {
-                        return "[" + x.TrimStart('[').Enclose(@"""");
-                    }
-
-                    if (!x.StartsWith("[") && x.EndsWith("]"))
-                    {
-                        return x.TrimEnd(']').Enclose(@"""") + "]";
-                    }
-
-                    return x.Enclose(@"""");
-                })
-                .Join(",");
-
-            var buff = System.Text.Encoding.UTF8.GetBytes($"[{formatted}]");
-            using var ms = new MemoryStream(buff);
-            labels = await JsonSerializer.DeserializeAsync<IEnumerable<dynamic>>(ms);
-        }
-
-        dynamic keymap = null;
-
-        if (this.Keymap.HasMeaningfulValue())
-        {
-            keymap = JsonSerializer.Deserialize<dynamic>(this.Keymap);
-        }
-
-        var layouts = new Layouts
-        {
-            Labels = labels,
-            Keymap = keymap,
-        };
-
-        var model = new ViaModel
-        {
-            Name = this.Name,
-            VenderId = this.VendorId,
-            ProductId = this.ProductId,
-            Lighting = Enum.Parse<Lighting>(this.Lighting),
-            Matrix = matrix,
-            Layouts = layouts,
-        };
-
-        var json = JsonSerializer.ToJsonString(model);
+        var json = this.Builder.Build(context);
 
         await this.BlazorDownloadFileService.DownloadFileFromText("via.json", json, "application/octet-stream");
     }
 
-    private void Select(ChangeEventArgs e)
+    private void OnLightingChanged(ChangeEventArgs e)
     {
-        this.Lighting = e.Value.ToString();
+        this.LightingTxt = e.Value.ToString();
     }
 }
