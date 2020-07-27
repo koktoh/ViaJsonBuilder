@@ -1,0 +1,157 @@
+﻿@page "/converter"
+@inject IBlazorDownloadFileService BlazorDownloadFileService
+@inject KeymapBuilder KeymapBuilder
+
+<h1>キーマップコンバーター</h1>
+
+@if (this.HasError)
+{
+    <div class="oi oi-warning alert alert-danger">
+        @ErrorMessage
+    </div>
+}
+
+<div class="drag-drop-zone">
+    <InputFile OnChange="OnUpload" />
+    @Status
+</div>
+
+<table class="table table-borderless">
+    <tbody>
+        <tr>
+            <td>
+                <textarea style="font-family: monospace; width:100%" rows="10" @bind="@SrcTxt" />
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <button class="btn btn-primary" @onclick="Convert"><span class="oi oi-loop-square" /> コンバート</button>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <textarea style="font-family: monospace; width:100%" rows="10" @bind="@DestTxt" />
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+@code {
+    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで <keyboard>.h ファイルをアップロード";
+    private string Status = DEFAULT_STATUS;
+
+    private bool HasError { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    private string SrcTxt { get; set; }
+    private string DestTxt { get; set; }
+
+    private void Convert()
+    {
+        this.ResetError();
+
+        if (this.SrcTxt.IsNullOrWhiteSpace())
+        {
+            return;
+        }
+
+        var context = new JsonBuildingContext
+        {
+            Raw = this.SrcTxt,
+        };
+
+        try
+        {
+            var json = this.KeymapBuilder.Build(context);
+
+            if (json.IsNullOrWhiteSpace())
+            {
+                this.ShowError("LAYOUT 定義が見つかりません。");
+                return;
+            }
+
+            this.DestTxt = json;
+        }
+        catch
+        {
+            this.ShowError("JSON への変換に失敗しました。");
+            return;
+        }
+    }
+
+    private async Task OnUpload(IFileListEntry[] files)
+    {
+        this.ResetError();
+
+        var file = files.FirstOrDefault();
+
+        if (file == null)
+        {
+            return;
+        }
+
+        this.Status = "Loading...";
+
+        var fileName = file.Name;
+
+        if (fileName.ToLower().EndsWith(".h"))
+        {
+            try
+            {
+                using var reader = new StreamReader(file.Data);
+                this.SrcTxt = await reader.ReadToEndAsync();
+            }
+            catch
+            {
+                this.ShowError("ファイルのアップロードに失敗しました。");
+                return;
+            }
+            finally
+            {
+                this.Status = DEFAULT_STATUS;
+            }
+        }
+
+        this.Status = DEFAULT_STATUS;
+    }
+
+    private async ValueTask Download()
+    {
+        this.ResetError();
+
+        if (this.DestTxt.IsNullOrWhiteSpace())
+        {
+            return;
+        }
+
+        try
+        {
+            await this.BlazorDownloadFileService.DownloadFileFromText("kle.json", this.DestTxt, "application/octet-stream");
+        }
+        catch
+        {
+            this.ShowError("JSON のダウンロードに失敗しました。");
+            return;
+        }
+    }
+
+    private void ResetError()
+    {
+        this.HasError = false;
+        this.ErrorMessage = string.Empty;
+    }
+
+    private void ShowError(string message)
+    {
+        this.ErrorMessage = message;
+        this.HasError = true;
+    }
+}

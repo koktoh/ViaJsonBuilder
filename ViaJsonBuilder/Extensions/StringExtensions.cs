@@ -4,6 +4,11 @@ namespace ViaJsonBuilder.Extensions
 {
     public static class StringExtensions
     {
+        public static bool IsNullOrWhiteSpace(this string source)
+        {
+            return string.IsNullOrWhiteSpace(source);
+        }
+
         public static bool HasMeaningfulValue(this string source)
         {
             return !string.IsNullOrWhiteSpace(source);

@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BlazorDownloadFile;
+using ViaJsonBuilder.Models.Extractor;
+using ViaJsonBuilder.Models.Json;
 
 namespace ViaJsonBuilder
 {
@@ -19,6 +21,9 @@ namespace ViaJsonBuilder
             builder.RootComponents.Add<App>("app");
 
             builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddTransient(sp => new KeyboardConfigInfoExtractor());
+            builder.Services.AddTransient(sp => new ViaBuilder());
+            builder.Services.AddTransient(sp => new KeymapBuilder());
             builder.Services.AddBlazorDownloadFile();
 
             await builder.Build().RunAsync();
