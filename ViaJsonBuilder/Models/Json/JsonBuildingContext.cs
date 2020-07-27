@@ -10,5 +10,6 @@
         public string Cols { get; set; }
         public string Labels { get; set; }
         public string Keymap { get; set; }
+        public string Raw { get; set; }
     }
 }

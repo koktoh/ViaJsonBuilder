@@ -23,6 +23,7 @@ namespace ViaJsonBuilder
             builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddTransient(sp => new KeyboardConfigInfoExtractor());
             builder.Services.AddTransient(sp => new ViaBuilder());
+            builder.Services.AddTransient(sp => new KeymapBuilder());
             builder.Services.AddBlazorDownloadFile();
 
             await builder.Build().RunAsync();
