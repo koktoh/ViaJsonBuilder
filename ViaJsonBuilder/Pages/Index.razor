@@ -1,3 +1,44 @@
 ﻿@page "/"
 
-<h3>Index</h3>
+<h1>VIA JSON Building Tool</h1>
+
+<div>
+    VIA 対応がちょっと簡単になるかもしれないツール
+</div>
+
+<ul class="list-group">
+    <li class="list-group-item">
+        <h4>VIA JSON Builder</h4>
+        <ul>
+            <li>
+                VIA 用の JSON ファイルを作成する
+            </li>
+            <li>
+                <code>config.h</code> を解析して各プロパティに設定する
+                <ul>
+                    <li><code>PRODUCT</code> (Name)</li>
+                    <li><code>VENDOR_ID</code></li>
+                    <li><code>PRODUCT_ID</code></li>
+                    <li><code>MATRIX_ROWS</code></li>
+                    <li><code>MATRIX_COLS</code></li>
+                </ul>
+            </li>
+            <li>
+                Keyboard Layout Editor で作成した JSON を読み込む<br />
+                <span class="oi oi-warning alert alert-warning"> Raw コピペではなく、ダウンロードしたものを使ってください（フォーマットが正しくないため）</span>
+            </li>
+        </ul>
+    </li>
+    <li class="list-group-item">
+        <h4>Keymap Converter</h4>
+        <ul>
+            <li>
+                <code>&lt;keyboard&gt;.h</code> など（キーボードのレイアウトマクロが定義されているファイル）から KLE 用 JSON ファイルを作成する
+            </li>
+            <li>
+                VIA 用のレジェンドを自動採番
+            </li>
+        </ul>
+        <span class="oi oi-warning alert alert-warning">機械的に生成しているので、適宜 KLE で修正してください</span>
+    </li>
+</ul>

@@ -1,14 +1,27 @@
 ﻿@page "/builder"
+@inject IBlazorDownloadFileService BlazorDownloadFileService
 @inject KeyboardConfigInfoExtractor Extractor
 @inject ViaBuilder ViaBuilder
 
 <h1>VIA JSON Builder</h1>
 
-<table class="table-borderless">
+@if (this.HasError)
+{
+    <div class="oi oi-warning alert alert-danger">
+        @ErrorMessage
+    </div>
+}
+
+<div class="drag-drop-zone">
+    <InputFile OnChange="OnUpload" />
+    @Status
+</div>
+
+<table class="table table-borderless">
     <tbody>
         <tr>
-            <td>Name</td>
-            <td></td>
+            <td style="width:100px">Name</td>
+            <td style="width:100px"></td>
             <td><input type="text" @bind="@NameTxt" /></td>
         </tr>
         <tr>
@@ -46,31 +59,27 @@
         <tr>
             <td>Layouts</td>
             <td>Labels</td>
-            <td><textarea cols="100" rows="1" @bind="@LabelsTxt" /></td>
+            <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@LabelsTxt" /></td>
         </tr>
         <tr>
             <td></td>
             <td valign="top">Keymap</td>
-            <td><textarea cols="100" rows="10" @bind="@KeymapTxt" /></td>
+            <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@KeymapTxt" /></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
+            </td>
         </tr>
     </tbody>
 </table>
 
-<div class="drag-drop-zone">
-    <InputFile OnChange="OnUpload" />
-    @Status
-</div>
-
-<button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
-
-<br />
-<br />
-
 @code{
-    [Inject] IBlazorDownloadFileService BlazorDownloadFileService { get; set; }
-
-    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで config.h / JSONファイルをアップロード";
+    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで config.h / JSON ファイルをアップロード";
     private string Status = DEFAULT_STATUS;
+
+    private bool HasError { get; set; } = false;
+    private string ErrorMessage { get; set; } = string.Empty;
 
     private string NameTxt { get; set; }
     private string VendorIdTxt { get; set; }
@@ -85,7 +94,10 @@
 
     private async Task OnUpload(IFileListEntry[] files)
     {
+        this.ResetError();
+
         var file = files.FirstOrDefault();
+
         if (file == null)
         {
             return;
@@ -99,11 +111,27 @@
 
         if (fileName.ToLower().Equals("config.h"))
         {
-            this.FillProperties(await reader.ReadToEndAsync());
+            try
+            {
+                this.FillProperties(await reader.ReadToEndAsync());
+            }
+            catch
+            {
+                this.ShowError("解析に失敗しました。手動で入力してください。");
+                return;
+            }
+            finally
+            {
+                this.Status = DEFAULT_STATUS;
+            }
         }
         else if (fileName.ToLower().EndsWith(".json"))
         {
             this.KeymapTxt = await reader.ReadToEndAsync();
+        }
+        else
+        {
+            this.ShowError("config.h / JSON ファイルをアップロードしてください。");
         }
 
         this.Status = DEFAULT_STATUS;
@@ -122,6 +150,8 @@
 
     private async ValueTask Download()
     {
+        this.ResetError();
+
         var context = new JsonBuildingContext
         {
             Name = this.NameTxt,
@@ -134,13 +164,33 @@
             Keymap = this.KeymapTxt,
         };
 
-        var json = this.ViaBuilder.Build(context);
+        try
+        {
+            var json = this.ViaBuilder.Build(context);
 
-        await this.BlazorDownloadFileService.DownloadFileFromText("via.json", json, "application/octet-stream");
+            await this.BlazorDownloadFileService.DownloadFileFromText($"{this.NameTxt.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
+        }
+        catch
+        {
+            this.ShowError("JSON ファイルの作成に失敗しました。");
+            return;
+        }
     }
 
     private void OnLightingChanged(ChangeEventArgs e)
     {
         this.LightingTxt = e.Value.ToString();
+    }
+
+    private void ResetError()
+    {
+        this.HasError = false;
+        this.ErrorMessage = string.Empty;
+    }
+
+    private void ShowError(string message)
+    {
+        this.ErrorMessage = message;
+        this.HasError = true;
     }
 }
