@@ -1,119 +1,139 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Utf8Json;
 using ViaJsonBuilder.Extensions;
+using ViaJsonBuilder.Models.Json.KeyboardLayoutEditor;
+using ViaJsonBuilder.Models.Json.QmkConfigurator;
+using ViaJsonBuilder.Models.Parser;
+using ViaJsonBuilder.Models.ProxyModels;
 
 namespace ViaJsonBuilder.Models.Json
 {
     public class KeymapBuilder : IJsonBuilder
     {
-        private const string LAYOUT = "layout";
-
-        private const double REX_TIMEOUT = 5;
-
-        private readonly Regex _layoutRex;
-        private readonly Regex _physicalLayoutRex;
+        private readonly PhysicalLayoutParser _physicalLayoutParser;
+        private readonly LogicalLayoutParser _logicalLayoutParser;
 
         public KeymapBuilder()
         {
-            this._layoutRex = new Regex($@"(\r|\n)(?<{LAYOUT}>(\#define LAYOUT)(.*(\r|\n))+?\s*\}})", RegexOptions.None, TimeSpan.FromSeconds(REX_TIMEOUT));
-            this._physicalLayoutRex = new Regex($@".*\(.*\\\s*(\r|\n)*(?<{LAYOUT}>(.*(\r|\n))+?.*)\s*\)", RegexOptions.None, TimeSpan.FromSeconds(REX_TIMEOUT));
+            this._physicalLayoutParser = new PhysicalLayoutParser();
+            this._logicalLayoutParser = new LogicalLayoutParser();
         }
 
         public string Build(JsonBuildingContext context)
         {
-            var layoutBlock = this.ExtractLayoutBlock(context.Raw);
-
-            if (layoutBlock.IsNullOrWhiteSpace())
-            {
-                return default;
-            }
-
-            var definitions = this.ExtractLayoutDefinitions(layoutBlock);
-
-            if (!definitions?.Any() ?? false)
-            {
-                return default;
-            }
-
-            var physicalLayout = this.ExtractPhysicalLayoutBlock(layoutBlock);
-
-            var pair = this.ConvertToDefinitionKlePair(definitions);
-
-            var kle = this.GetPhysicalKle(physicalLayout, pair);
-
-            var json = this.ConvertToJson(kle);
+            var qcLayout = this.GetQcLayout(context.QmkConfJson);
+            var physicalLayout = this.GetPhysicalLayout(context.Raw);
+            var logicalLayout = this.GetLogicalLayout(context.Raw);
+            var injected = this.InjectDesign(physicalLayout, qcLayout);
+            var kles = this.ConvertToKleLayout(injected, logicalLayout);
+            var json = this.FormatToJson(kles);
 
             return json;
         }
 
-        private string ExtractPhysicalLayoutBlock(string block)
+        private QcLayout GetQcLayout(string json)
         {
-            var matched = this._physicalLayoutRex.Match(block).Groups[LAYOUT];
+            var model = JsonSerializer.Deserialize<QcJsonModel>(json);
 
-            if (matched.Success)
+            return model.QcLayouts.FirstOrDefault().Value ?? default;
+        }
+
+        private PhysicalLayoutModel GetPhysicalLayout(string raw)
+        {
+            return this._physicalLayoutParser.Parse(raw);
+        }
+
+        private LogicalLayoutModel GetLogicalLayout(string raw)
+        {
+            return this._logicalLayoutParser.Parse(raw);
+        }
+
+        private PhysicalLayoutModel InjectDesign(PhysicalLayoutModel physicalLayout, QcLayout qcLayout)
+        {
+            if (qcLayout == default)
             {
-                return matched.Value
-                    .Replace("\\", string.Empty)
-                    .ToLower()
-                    .Trim();
+                return physicalLayout;
             }
 
-            return default;
-        }
+            var counter = 0;
 
-        private string ExtractLayoutBlock(string raw)
-        {
-            var matched = this._layoutRex.Match(raw).Groups[LAYOUT];
-
-            if (matched.Success)
+            return new PhysicalLayoutModel
             {
-                return matched.Value;
-            }
-
-            return default;
-        }
-
-        private IEnumerable<string> ExtractLayoutDefinitions(string block)
-        {
-            return block.Split(Environment.NewLine)
-                .Where(x => Regex.IsMatch(x, @"^\s*\{.*?\}", RegexOptions.None, TimeSpan.FromSeconds(REX_TIMEOUT)))
-                .Select(x => Regex.Replace(x, @"(\s*\{)(.*)(\},?\s*\\)", "$2", RegexOptions.None, TimeSpan.FromSeconds(REX_TIMEOUT)));
-        }
-
-        private IDictionary<string, string> ConvertToDefinitionKlePair(IEnumerable<string> definitions)
-        {
-            return definitions
-                .SelectMany((x, row) =>
-                {
-                    return x.Split(",")
-                    .Select(y => y.Trim())
-                    .Select((y, col) =>
+                PhysicalRows = physicalLayout.PhysicalRows
+                    .Select(x =>
                     {
-                        var isKcNo = y.ToUpper().Equals("KC_NO") || y.Equals("XXXXXXX");
+                        return new PhysicalRow
+                        {
+                            PhysicalKeys = x.PhysicalKeys
+                            .Select(y =>
+                            {
+                                var key = qcLayout.QcKeys.ElementAtOrDefault(counter);
 
-                        return new { Key = y.ToLower(), Value = $@"{(isKcNo ? @"{""d"":true}," : string.Empty)}""{row},{col}""" };
-                    });
-                })
-                .Where(x => !x.Key.Equals("kc_no"))
-                .ToDictionary(x => x.Key, x => x.Value);
+                                counter++;
+
+                                return new PhysicalKey(y.Tag)
+                                {
+                                    Label = key.Label,
+                                    Row = key.Row,
+                                    Col = key.Col,
+                                    Width = key.Width,
+                                    Height = key.Height,
+                                };
+                            }),
+                        };
+                    }),
+            };
         }
 
-        private IEnumerable<string> GetPhysicalKle(string physicalLayout, IDictionary<string, string> dict)
+        private IEnumerable<IEnumerable<KleKey>> ConvertToKleLayout(PhysicalLayoutModel physicalLayout, LogicalLayoutModel logicalLayout)
         {
-            foreach (var elem in dict)
+            return physicalLayout.PhysicalRows
+                .Select(x =>
+                {
+                    return x.PhysicalKeys
+                        .Select(y =>
+                        {
+                            var logicalKey = logicalLayout.LogicalRows
+                                .SelectMany(x => x.LogicalKeys)
+                                .FirstOrDefault(z => z.Tag.Equals(y.Tag));
+
+                            var option = new KleOptionJsonModel
+                            {
+                                Width = y.Width,
+                                Height = y.Height,
+                            };
+
+                            return new KleKey
+                            {
+                                RegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
+                                RegendCenterLeft = y.Label,
+                                Option = option,
+                            };
+                        });
+                });
+        }
+
+        private IEnumerable<string> ConcatCols(IEnumerable<IEnumerable<KleKey>> keys)
+        {
+            return keys.Select(x =>
             {
-                physicalLayout = physicalLayout.Replace(elem.Key, elem.Value);
-            }
-
-            return physicalLayout.Split(Environment.NewLine)
-                .Select(x => x.TrimEnd().TrimEnd(","));
+                return x.Select(y => y.ToString())
+                    .JoinComma();
+            });
         }
 
-        private string ConvertToJson(IEnumerable<string> kle)
+        private string ConcatRows(IEnumerable<string> rows)
         {
-            return kle.Select(x => $"[{x}]").Join($",{Environment.NewLine}");
+            return rows.Select(x => $"[{x}]")
+                .Join($",{Environment.NewLine}");
+        }
+
+        private string FormatToJson(IEnumerable<IEnumerable<KleKey>> keys)
+        {
+            var rows = this.ConcatCols(keys);
+            return this.ConcatRows(rows);
         }
     }
 }
