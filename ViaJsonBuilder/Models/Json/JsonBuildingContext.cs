@@ -11,5 +11,6 @@
         public string Labels { get; set; }
         public string Keymap { get; set; }
         public string Raw { get; set; }
+        public string QmkConfJson { get; set; }
     }
 }
