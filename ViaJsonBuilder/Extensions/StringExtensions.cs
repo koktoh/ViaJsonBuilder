@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ViaJsonBuilder.Extensions
 {
@@ -56,6 +57,31 @@ namespace ViaJsonBuilder.Extensions
             return string.Join(separator, source);
         }
 
+        public static string JoinComma(this IEnumerable<string> source)
+        {
+            return source.Join(",");
+        }
+
+        public static string JoinNewLine(this IEnumerable<string> source)
+        {
+            return source.Join(Environment.NewLine);
+        }
+
+        public static IEnumerable<string> SplitComma(this string source, StringSplitOptions options = StringSplitOptions.None)
+        {
+            return source.Split(",", options);
+        }
+
+        public static IEnumerable<string> SplitNewLine(this string source, StringSplitOptions options = StringSplitOptions.None)
+        {
+            return source.Split(Environment.NewLine, options);
+        }
+
+        public static string Trim(this string source, string trimStr)
+        {
+            return source.Trim(trimStr.ToCharArray());
+        }
+
         public static string TrimStart(this string source, string trimStr)
         {
             return source.TrimStart(trimStr.ToCharArray());
@@ -64,6 +90,11 @@ namespace ViaJsonBuilder.Extensions
         public static string TrimEnd(this string source, string trimStr)
         {
             return source.TrimEnd(trimStr.ToCharArray());
+        }
+
+        public static string Escape(this string source)
+        {
+            return source?.Replace(@"\", @"\\").Replace(@"""", @"\""");
         }
     }
 }

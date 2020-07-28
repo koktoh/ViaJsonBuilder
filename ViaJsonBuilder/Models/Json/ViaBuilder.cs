@@ -76,7 +76,7 @@ namespace ViaJsonBuilder.Models.Json
 
                     return x.Enclose(@"""");
                 })
-                .Join(",");
+                .JoinComma();
 
             if(!formatted.StartsWith("["))
             {
