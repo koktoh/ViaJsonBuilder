@@ -22,22 +22,25 @@
             <td>
                 <textarea style="font-family: monospace; width:100%" rows="10" @bind="@SrcTxt" />
             </td>
+            <td>
+                <textarea style="font-family: monospace; width:100%" rows="10" @bind="@QmkConfJsonTxt" />
+            </td>
         </tr>
 
         <tr>
-            <td>
+            <td colspan="2">
                 <button class="btn btn-primary" @onclick="Convert"><span class="oi oi-loop-square" /> コンバート</button>
             </td>
         </tr>
 
         <tr>
-            <td>
+            <td colspan="2">
                 <textarea style="font-family: monospace; width:100%" rows="10" @bind="@DestTxt" />
             </td>
         </tr>
 
         <tr>
-            <td>
+            <td colspan="2">
                 <button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
             </td>
         </tr>
@@ -45,13 +48,14 @@
 </table>
 
 @code {
-    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで <keyboard>.h ファイルをアップロード";
+    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで <keyboard>.h / info.json ファイルをアップロード";
     private string Status = DEFAULT_STATUS;
 
     private bool HasError { get; set; } = false;
     private string ErrorMessage { get; set; } = string.Empty;
 
     private string SrcTxt { get; set; }
+    private string QmkConfJsonTxt { get; set; }
     private string DestTxt { get; set; }
 
     private void Convert()
@@ -66,6 +70,7 @@
         var context = new JsonBuildingContext
         {
             Raw = this.SrcTxt,
+            QmkConfJson = this.QmkConfJsonTxt,
         };
 
         try
@@ -102,22 +107,27 @@
 
         var fileName = file.Name;
 
-        if (fileName.ToLower().EndsWith(".h"))
+        using var reader = new StreamReader(file.Data);
+
+        try
         {
-            try
+            if (fileName.ToLower().EndsWith(".h"))
             {
-                using var reader = new StreamReader(file.Data);
                 this.SrcTxt = await reader.ReadToEndAsync();
             }
-            catch
+            else if (fileName.ToLower().Equals("info.json"))
             {
-                this.ShowError("ファイルのアップロードに失敗しました。");
-                return;
+                this.QmkConfJsonTxt = await reader.ReadToEndAsync();
             }
-            finally
-            {
-                this.Status = DEFAULT_STATUS;
-            }
+        }
+        catch
+        {
+            this.ShowError("ファイルのアップロードに失敗しました。");
+            return;
+        }
+        finally
+        {
+            this.Status = DEFAULT_STATUS;
         }
 
         this.Status = DEFAULT_STATUS;
