@@ -58,38 +58,42 @@
     private string QmkConfJsonTxt { get; set; }
     private string DestTxt { get; set; }
 
-    private void Convert()
+    private async Task Convert()
     {
         this.ResetError();
+        this.DestTxt = string.Empty;
 
         if (this.SrcTxt.IsNullOrWhiteSpace())
         {
             return;
         }
 
-        var context = new JsonBuildingContext
+        await Task.Run(() =>
         {
-            Raw = this.SrcTxt,
-            QmkConfJson = this.QmkConfJsonTxt,
-        };
-
-        try
-        {
-            var json = this.KeymapBuilder.Build(context);
-
-            if (json.IsNullOrWhiteSpace())
+            var context = new JsonBuildingContext
             {
-                this.ShowError("LAYOUT 定義が見つかりません。");
+                Raw = this.SrcTxt,
+                QmkConfJson = this.QmkConfJsonTxt,
+            };
+
+            try
+            {
+                var json = this.KeymapBuilder.Build(context);
+
+                if (json.IsNullOrWhiteSpace())
+                {
+                    this.ShowError("LAYOUT 定義が見つかりません。");
+                    return;
+                }
+
+                this.DestTxt = json;
+            }
+            catch
+            {
+                this.ShowError("JSON への変換に失敗しました。");
                 return;
             }
-
-            this.DestTxt = json;
-        }
-        catch
-        {
-            this.ShowError("JSON への変換に失敗しました。");
-            return;
-        }
+        });
     }
 
     private async Task OnUpload(IFileListEntry[] files)

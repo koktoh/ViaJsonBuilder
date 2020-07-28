@@ -113,7 +113,7 @@
         {
             try
             {
-                this.FillProperties(await reader.ReadToEndAsync());
+                await this.FillPropertiesAsync(await reader.ReadToEndAsync());
             }
             catch
             {
@@ -137,15 +137,18 @@
         this.Status = DEFAULT_STATUS;
     }
 
-    private void FillProperties(string target)
+    private async Task FillPropertiesAsync(string target)
     {
-        var info = this.Extractor.Extract(target);
+        await Task.Run(() =>
+        {
+            var info = this.Extractor.Extract(target);
 
-        this.NameTxt = info.Name;
-        this.VendorIdTxt = info.VendorId;
-        this.ProductIdTxt = info.ProductId;
-        this.RowsTxt = info.Rows;
-        this.ColsTxt = info.Cols;
+            this.NameTxt = info.Name;
+            this.VendorIdTxt = info.VendorId;
+            this.ProductIdTxt = info.ProductId;
+            this.RowsTxt = info.Rows;
+            this.ColsTxt = info.Cols;
+        });
     }
 
     private async ValueTask Download()
