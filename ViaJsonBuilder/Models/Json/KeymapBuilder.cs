@@ -62,25 +62,41 @@ namespace ViaJsonBuilder.Models.Json
             return new PhysicalLayoutModel
             {
                 PhysicalRows = physicalLayout.PhysicalRows
-                    .Select(x =>
+                    .Select((x, row) =>
                     {
+                        double offsetX = 0;
+
                         return new PhysicalRow
                         {
                             PhysicalKeys = x.PhysicalKeys
-                            .Select(y =>
+                            .Select((y, col) =>
                             {
-                                var key = qcLayout.QcKeys.ElementAtOrDefault(counter);
+                                var qcKey = qcLayout.QcKeys.ElementAtOrDefault(counter);
 
                                 counter++;
 
-                                return new PhysicalKey(y.Tag)
+                                var physKey = new PhysicalKey(y.Tag)
                                 {
-                                    Label = key.Label,
-                                    Row = key.Row,
-                                    Col = key.Col,
-                                    Width = key.Width,
-                                    Height = key.Height,
+                                    Label = qcKey.Label,
+                                    Row = row,
+                                    Col = col,
+                                    OffsetX = qcKey.X - offsetX - col,
+                                    OffsetY = 0,
+                                    Width = qcKey.Width,
+                                    Height = qcKey.Height,
                                 };
+
+                                if (physKey.Width != 0)
+                                {
+                                    offsetX += physKey.Width - 1;
+                                }
+
+                                if (physKey.OffsetX != 0)
+                                {
+                                    offsetX += physKey.OffsetX;
+                                }
+
+                                return physKey;
                             }),
                         };
                     }),
@@ -101,6 +117,8 @@ namespace ViaJsonBuilder.Models.Json
 
                             var option = new KleOptionJsonModel
                             {
+                                OffsetX = y.OffsetX,
+                                OffsetY = y.OffsetY,
                                 Width = y.Width,
                                 Height = y.Height,
                             };

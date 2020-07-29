@@ -7,9 +7,9 @@ namespace ViaJsonBuilder.Models.Json.QmkConfigurator
         [DataMember(Name = "label")]
         public string Label { get; set; }
         [DataMember(Name = "x")]
-        public double Col { get; set; }
+        public double X { get; set; }
         [DataMember(Name = "y")]
-        public double Row { get; set; }
+        public double Y { get; set; }
         [DataMember(Name = "w")]
         public double Width { get; set; }
         [DataMember(Name = "h")]
