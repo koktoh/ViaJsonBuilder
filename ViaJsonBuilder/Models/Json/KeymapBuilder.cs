@@ -107,8 +107,8 @@ namespace ViaJsonBuilder.Models.Json
 
                             return new KleKey
                             {
-                                RegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
-                                RegendCenterLeft = y.Label,
+                                LegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
+                                LegendCenterLeft = y.Label,
                                 Option = option,
                             };
                         });
