@@ -2,43 +2,74 @@
 
 <h1>VIA JSON Building Tool</h1>
 
-<div>
-    VIA 対応がちょっと簡単になるかもしれないツール
-</div>
+<h4><span class="oi oi-circle-check" /> このプログラムについて</h4>
 
-<ul class="list-group">
-    <li class="list-group-item">
-        <h4>VIA JSON Builder</h4>
-        <ul>
-            <li>
-                VIA 用の JSON ファイルを作成する
-            </li>
-            <li>
-                <code>config.h</code> を解析して各プロパティに設定する
-                <ul>
-                    <li><code>PRODUCT</code> (Name)</li>
-                    <li><code>VENDOR_ID</code></li>
-                    <li><code>PRODUCT_ID</code></li>
-                    <li><code>MATRIX_ROWS</code></li>
-                    <li><code>MATRIX_COLS</code></li>
-                </ul>
-            </li>
-            <li>
-                Keyboard Layout Editor で作成した JSON を読み込む<br />
-                <span class="oi oi-warning alert alert-warning"> Raw コピペではなく、ダウンロードしたものを使ってください（フォーマットが正しくないため）</span>
-            </li>
-        </ul>
-    </li>
-    <li class="list-group-item">
-        <h4>Keymap Converter</h4>
-        <ul>
-            <li>
-                <code>&lt;keyboard&gt;.h</code> など（キーボードのレイアウトマクロが定義されているファイル）から KLE 用 JSON ファイルを作成する
-            </li>
-            <li>
-                VIA 用のレジェンドを自動採番
-            </li>
-        </ul>
-        <span class="oi oi-warning alert alert-warning">機械的に生成しているので、適宜 KLE で修正してください</span>
-    </li>
-</ul>
+<p class="ml-md-4">
+    VIA 用の JSON の作成を助けるツールです<br />
+    VIA の詳細や使い方については
+    <a href="https://caniusevia.com/" target="_blank">公式サイト <span class="oi oi-external-link" /></a> や
+    <a href="https://caniusevia.com/docs/specification" target="_blank">公式のドキュメント <span class="oi oi-external-link" /></a> をご確認ください
+
+    <span class="oi oi-warning alert alert-danger border border-danger"> <b>このプログラムは VIA に読み込ませる JSON を作成するものであり、既存のファームウェアを VIA 対応ファームウェアに変換するものではありません</b></span>
+</p>
+
+<h4><span class="oi oi-circle-check" /> 使い方</h4>
+
+<p class="ml-md-4">
+    <ol>
+        <li>
+            公式ドキュメントの <a href="https://caniusevia.com/docs/configuring_qmk" target="_blank">Configuring QMK <span class="oi oi-external-link" /></a> に従い、 QMK ファームウェアの準備をする
+        </li>
+        <li>
+            このプログラムを使って JSON を作成する
+        </li>
+        <li>
+            JSON に問題ないか確認する<br />
+            <span class="oi oi-check"> 問題があれば、手動で直してください（GitHub の issue に書いていただけると改善されるかもしれません）</span>
+        </li>
+        <li>
+            VIA に JSON を読み込ませる
+        </li>
+    </ol>
+</p>
+
+<h4><span class="oi oi-circle-check" /> 各ツールについて</h4>
+
+<p class="ml-md-4">
+    <ul class="list-group">
+        <li class="list-group-item">
+            <h5>VIA JSON Builder</h5>
+            <ul>
+                <li>
+                    VIA 用の JSON ファイルを作成する
+                </li>
+                <li>
+                    <code>config.h</code> を解析して各プロパティに設定する
+                    <ul>
+                        <li><code>PRODUCT</code> (Name)</li>
+                        <li><code>VENDOR_ID</code></li>
+                        <li><code>PRODUCT_ID</code></li>
+                        <li><code>MATRIX_ROWS</code></li>
+                        <li><code>MATRIX_COLS</code></li>
+                    </ul>
+                </li>
+                <li>
+                    Keyboard Layout Editor で作成した JSON を読み込む<br />
+                    <span class="oi oi-warning alert alert-warning"> Raw コピペではなく、ダウンロードしたものを使ってください（フォーマットが正しくないため）</span>
+                </li>
+            </ul>
+        </li>
+        <li class="list-group-item">
+            <h5>Keymap Converter</h5>
+            <ul>
+                <li>
+                    <code>&lt;keyboard&gt;.h</code> など（キーボードのレイアウトマクロが定義されているファイル）から KLE 用 JSON ファイルを作成する
+                </li>
+                <li>
+                    VIA 用のレジェンドを自動採番
+                </li>
+            </ul>
+            <span class="oi oi-warning alert alert-warning">機械的に生成しているので、適宜 KLE で修正してください</span>
+        </li>
+    </ul>
+</p>
