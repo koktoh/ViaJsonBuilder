@@ -9,9 +9,22 @@
         <span class="ml-md-5"><a href="https://caniusevia.com/" target="_blank">VIA Official</a> (<a href="https://caniusevia.com/docs/specification" target="_blank">Document</a>)</span>
         <a href="http://www.keyboard-layout-editor.com/" target="_blank" class="ml-md-5">Keyboard Layout Editor</a>
         <a href="https://github.com/koktoh/ViaJsonBuilder" target="_blank" class="ml-md-5">GitHub</a>
+        <span style="color:#333;" class="ml-md-5">Ver. @Version</span>
     </div>
 
     <div class="content px-4">
         @Body
     </div>
 </div>
+
+@code {
+    private string Version => this.GetVersion();
+
+    private string GetVersion()
+    {
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version;
+
+        return $"{version.Major}.{version.Minor}.{version.Build}";
+    }
+}
