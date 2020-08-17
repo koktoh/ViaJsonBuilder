@@ -57,6 +57,7 @@ namespace ViaJsonBuilder.Models.Json
                 return physicalLayout;
             }
 
+            double originY = 0;
             var counter = 0;
 
             return new PhysicalLayoutModel
@@ -65,6 +66,7 @@ namespace ViaJsonBuilder.Models.Json
                     .Select((row, rowIndex) =>
                     {
                         double offsetX = 0;
+                        double offsetY = 0;
 
                         return new PhysicalRow
                         {
@@ -73,6 +75,21 @@ namespace ViaJsonBuilder.Models.Json
                             {
                                 var qcKey = qcLayout.QcKeys.ElementAtOrDefault(counter);
 
+                                if (rowIndex == 0 && colIndex == 0)
+                                {
+                                    originY = qcKey.Y;
+                                    offsetY = qcKey.Y;
+                                }
+                                else if (colIndex == 0)
+                                {
+                                    offsetY = qcKey.Y - originY - rowIndex;
+                                }
+                                else
+                                {
+                                    var preQcKey = qcLayout.QcKeys.ElementAtOrDefault(counter - 1);
+                                    offsetY = qcKey.Y - preQcKey.Y;
+                                }
+
                                 counter++;
 
                                 var physKey = new PhysicalKey(key.Tag)
@@ -80,8 +97,8 @@ namespace ViaJsonBuilder.Models.Json
                                     Label = qcKey.Label,
                                     Row = rowIndex,
                                     Col = colIndex,
-                                    OffsetX = qcKey.X - offsetX - colIndex,
-                                    OffsetY = 0,
+                                    OffsetX = Math.Round(qcKey.X - offsetX - colIndex, 3),
+                                    OffsetY = Math.Round(offsetY, 3),
                                     Width = qcKey.Width,
                                     Height = qcKey.Height,
                                 };
