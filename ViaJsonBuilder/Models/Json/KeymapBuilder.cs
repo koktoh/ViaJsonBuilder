@@ -62,25 +62,25 @@ namespace ViaJsonBuilder.Models.Json
             return new PhysicalLayoutModel
             {
                 PhysicalRows = physicalLayout.PhysicalRows
-                    .Select((x, row) =>
+                    .Select((row, rowIndex) =>
                     {
                         double offsetX = 0;
 
                         return new PhysicalRow
                         {
-                            PhysicalKeys = x.PhysicalKeys
-                            .Select((y, col) =>
+                            PhysicalKeys = row.PhysicalKeys
+                            .Select((key, colIndex) =>
                             {
                                 var qcKey = qcLayout.QcKeys.ElementAtOrDefault(counter);
 
                                 counter++;
 
-                                var physKey = new PhysicalKey(y.Tag)
+                                var physKey = new PhysicalKey(key.Tag)
                                 {
                                     Label = qcKey.Label,
-                                    Row = row,
-                                    Col = col,
-                                    OffsetX = qcKey.X - offsetX - col,
+                                    Row = rowIndex,
+                                    Col = colIndex,
+                                    OffsetX = qcKey.X - offsetX - colIndex,
                                     OffsetY = 0,
                                     Width = qcKey.Width,
                                     Height = qcKey.Height,
@@ -106,27 +106,27 @@ namespace ViaJsonBuilder.Models.Json
         private IEnumerable<IEnumerable<KleKey>> ConvertToKleLayout(PhysicalLayoutModel physicalLayout, LogicalLayoutModel logicalLayout)
         {
             return physicalLayout.PhysicalRows
-                .Select(x =>
+                .Select(row =>
                 {
-                    return x.PhysicalKeys
-                        .Select(y =>
+                    return row.PhysicalKeys
+                        .Select(key =>
                         {
                             var logicalKey = logicalLayout.LogicalRows
                                 .SelectMany(x => x.LogicalKeys)
-                                .FirstOrDefault(z => z.Tag.Equals(y.Tag));
+                                .FirstOrDefault(x => x.Tag.Equals(key.Tag));
 
                             var option = new KleOptionJsonModel
                             {
-                                OffsetX = y.OffsetX,
-                                OffsetY = y.OffsetY,
-                                Width = y.Width,
-                                Height = y.Height,
+                                OffsetX = key.OffsetX,
+                                OffsetY = key.OffsetY,
+                                Width = key.Width,
+                                Height = key.Height,
                             };
 
                             return new KleKey
                             {
                                 LegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
-                                LegendCenterLeft = y.Label,
+                                LegendCenterLeft = key.Label,
                                 Option = option,
                             };
                         });
