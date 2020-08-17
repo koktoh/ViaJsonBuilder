@@ -57,31 +57,48 @@ namespace ViaJsonBuilder.Models.Json
                 return physicalLayout;
             }
 
+            double originY = 0;
             var counter = 0;
 
             return new PhysicalLayoutModel
             {
                 PhysicalRows = physicalLayout.PhysicalRows
-                    .Select((x, row) =>
+                    .Select((row, rowIndex) =>
                     {
                         double offsetX = 0;
+                        double offsetY = 0;
 
                         return new PhysicalRow
                         {
-                            PhysicalKeys = x.PhysicalKeys
-                            .Select((y, col) =>
+                            PhysicalKeys = row.PhysicalKeys
+                            .Select((key, colIndex) =>
                             {
                                 var qcKey = qcLayout.QcKeys.ElementAtOrDefault(counter);
 
+                                if (rowIndex == 0 && colIndex == 0)
+                                {
+                                    originY = qcKey.Y;
+                                    offsetY = qcKey.Y;
+                                }
+                                else if (colIndex == 0)
+                                {
+                                    offsetY = qcKey.Y - originY - rowIndex;
+                                }
+                                else
+                                {
+                                    var preQcKey = qcLayout.QcKeys.ElementAtOrDefault(counter - 1);
+                                    offsetY = qcKey.Y - preQcKey.Y;
+                                }
+
                                 counter++;
 
-                                var physKey = new PhysicalKey(y.Tag)
+                                var physKey = new PhysicalKey(key.Tag)
                                 {
                                     Label = qcKey.Label,
-                                    Row = row,
-                                    Col = col,
-                                    OffsetX = qcKey.X - offsetX - col,
-                                    OffsetY = 0,
+                                    Row = rowIndex,
+                                    Col = colIndex,
+                                    OffsetX = Math.Round(qcKey.X - offsetX - colIndex, 3),
+                                    OffsetY = Math.Round(offsetY, 3),
                                     Width = qcKey.Width,
                                     Height = qcKey.Height,
                                 };
@@ -106,27 +123,27 @@ namespace ViaJsonBuilder.Models.Json
         private IEnumerable<IEnumerable<KleKey>> ConvertToKleLayout(PhysicalLayoutModel physicalLayout, LogicalLayoutModel logicalLayout)
         {
             return physicalLayout.PhysicalRows
-                .Select(x =>
+                .Select(row =>
                 {
-                    return x.PhysicalKeys
-                        .Select(y =>
+                    return row.PhysicalKeys
+                        .Select(key =>
                         {
                             var logicalKey = logicalLayout.LogicalRows
                                 .SelectMany(x => x.LogicalKeys)
-                                .FirstOrDefault(z => z.Tag.Equals(y.Tag));
+                                .FirstOrDefault(x => x.Tag.Equals(key.Tag));
 
                             var option = new KleOptionJsonModel
                             {
-                                OffsetX = y.OffsetX,
-                                OffsetY = y.OffsetY,
-                                Width = y.Width,
-                                Height = y.Height,
+                                OffsetX = key.OffsetX,
+                                OffsetY = key.OffsetY,
+                                Width = key.Width,
+                                Height = key.Height,
                             };
 
                             return new KleKey
                             {
                                 LegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
-                                LegendCenterLeft = y.Label,
+                                LegendCenterLeft = key.Label,
                                 Option = option,
                             };
                         });

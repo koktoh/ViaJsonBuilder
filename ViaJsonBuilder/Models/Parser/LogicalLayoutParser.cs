@@ -29,16 +29,16 @@ namespace ViaJsonBuilder.Models.Parser
             {
                 LogicalRows = this.Normalize(layout)
                     .Select(x => x.SplitComma())
-                    .Select((x, row) =>
+                    .Select((row, rowIndex) =>
                     {
                         return new LogicalRow
                         {
-                            LogicalKeys = x.Select((y, col) =>
+                            LogicalKeys = row.Select((key, colIndex) =>
                             {
-                                return new LogicalKey(y.Trim().ToLower())
+                                return new LogicalKey(key.Trim().ToLower())
                                 {
-                                    Col = col,
-                                    Row = row,
+                                    Col = colIndex,
+                                    Row = rowIndex,
                                 };
                             })
                         };

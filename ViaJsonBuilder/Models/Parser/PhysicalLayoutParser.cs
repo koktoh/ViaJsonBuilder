@@ -30,16 +30,16 @@ namespace ViaJsonBuilder.Models.Parser
             {
                 PhysicalRows = this.Normalize(layout)
                     .Select(x => x.SplitComma())
-                    .Select((x, row) =>
+                    .Select((row, rowIndex) =>
                     {
                         return new PhysicalRow
                         {
-                            PhysicalKeys = x.Select((y, col) =>
+                            PhysicalKeys = row.Select((key, colIndex) =>
                             {
-                                return new PhysicalKey(y.Trim().ToLower())
+                                return new PhysicalKey(key.Trim().ToLower())
                                 {
-                                    Col = col,
-                                    Row = row,
+                                    Col = colIndex,
+                                    Row = rowIndex,
                                 };
                             })
                         };
