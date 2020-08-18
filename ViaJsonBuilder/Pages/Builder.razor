@@ -3,83 +3,63 @@
 @inject KeyboardConfigInfoExtractor Extractor
 @inject ViaBuilder ViaBuilder
 
-<h1>VIA JSON Builder</h1>
+<PageLayout @ref="pageBase" Title="VIA JSON Builder" TargetFiles="@(new[] { "config.h","JSON ファイル"})"
+            ValidateFunc="this.Validate" OnUploadFuncAsync="this.OnUpload" OnDownloadFuncAsync="this.OnDownload">
+    <table class="table table-borderless">
+        <tbody>
+            <tr>
+                <td style="width:100px">Name</td>
+                <td style="width:100px"></td>
+                <td><input type="text" @bind="@NameTxt" /></td>
+            </tr>
+            <tr>
+                <td>Vendor ID</td>
+                <td></td>
+                <td><input type="text" @bind="@VendorIdTxt" /></td>
+            </tr>
+            <tr>
+                <td>Product ID</td>
+                <td></td>
+                <td><input type="text" @bind="@ProductIdTxt" /></td>
+            </tr>
+            <tr>
+                <td>Lighting</td>
+                <td></td>
+                <td>
+                    <select @onchange="OnLightingChanged">
+                        @foreach (var item in LightingList)
+                        {
+                            <option value="@item">@item</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Matrix</td>
+                <td>Rows</td>
+                <td><input type="number" @bind="@RowsTxt" /></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>Cols</td>
+                <td><input type="number" @bind="@ColsTxt" /></td>
+            </tr>
+            <tr>
+                <td>Layouts</td>
+                <td>Labels</td>
+                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@LabelsTxt" /></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td valign="top">Keymap</td>
+                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@KeymapTxt" /></td>
+            </tr>
+        </tbody>
+    </table>
+</PageLayout>
 
-@if (this.HasError)
-{
-    <div class="oi oi-warning alert alert-danger">
-        @ErrorMessage
-    </div>
-}
-
-<div class="drag-drop-zone">
-    <InputFile OnChange="OnUpload" />
-    @Status
-</div>
-
-<table class="table table-borderless">
-    <tbody>
-        <tr>
-            <td style="width:100px">Name</td>
-            <td style="width:100px"></td>
-            <td><input type="text" @bind="@NameTxt" /></td>
-        </tr>
-        <tr>
-            <td>Vendor ID</td>
-            <td></td>
-            <td><input type="text" @bind="@VendorIdTxt" /></td>
-        </tr>
-        <tr>
-            <td>Product ID</td>
-            <td></td>
-            <td><input type="text" @bind="@ProductIdTxt" /></td>
-        </tr>
-        <tr>
-            <td>Lighting</td>
-            <td></td>
-            <td>
-                <select @onchange="OnLightingChanged">
-                    @foreach (var item in LightingList)
-                    {
-                        <option value="@item">@item</option>
-                    }
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td>Matrix</td>
-            <td>Rows</td>
-            <td><input type="number" @bind="@RowsTxt" /></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td>Cols</td>
-            <td><input type="number" @bind="@ColsTxt" /></td>
-        </tr>
-        <tr>
-            <td>Layouts</td>
-            <td>Labels</td>
-            <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@LabelsTxt" /></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td valign="top">Keymap</td>
-            <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@KeymapTxt" /></td>
-        </tr>
-        <tr>
-            <td colspan="3">
-                <button class="btn btn-primary" @onclick=@(async () => await Download())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-@code{
-    private const string DEFAULT_STATUS = "クリックまたはドラッグ&ドロップで config.h / JSON ファイルをアップロード";
-    private string Status = DEFAULT_STATUS;
-
-    private bool HasError { get; set; } = false;
-    private string ErrorMessage { get; set; } = string.Empty;
+@code {
+    private PageLayout pageBase;
 
     private string NameTxt { get; set; }
     private string VendorIdTxt { get; set; }
@@ -92,19 +72,15 @@
 
     private IEnumerable<string> LightingList = Enum.GetNames(typeof(Lighting));
 
-    private async Task OnUpload(IFileListEntry[] files)
+    private bool Validate(IFileListEntry file)
     {
-        this.ResetError();
+        var fileName = file.Name;
 
-        var file = files.FirstOrDefault();
+        return fileName.ToLower().Equals("config.h") || fileName.ToLower().EndsWith(".json");
+    }
 
-        if (file == null)
-        {
-            return;
-        }
-
-        this.Status = "Loading...";
-
+    private async Task OnUpload(IFileListEntry file)
+    {
         var fileName = file.Name;
 
         using var reader = new StreamReader(file.Data);
@@ -117,24 +93,14 @@
             }
             catch
             {
-                this.ShowError("解析に失敗しました。手動で入力してください。");
+                this.pageBase.ShowError("解析に失敗しました。手動で入力してください。");
                 return;
-            }
-            finally
-            {
-                this.Status = DEFAULT_STATUS;
             }
         }
         else if (fileName.ToLower().EndsWith(".json"))
         {
             this.KeymapTxt = await reader.ReadToEndAsync();
         }
-        else
-        {
-            this.ShowError("config.h / JSON ファイルをアップロードしてください。");
-        }
-
-        this.Status = DEFAULT_STATUS;
     }
 
     private async Task FillPropertiesAsync(string target)
@@ -151,10 +117,8 @@
         });
     }
 
-    private async ValueTask Download()
+    private async ValueTask OnDownload()
     {
-        this.ResetError();
-
         var context = new JsonBuildingContext
         {
             Name = this.NameTxt,
@@ -167,33 +131,13 @@
             Keymap = this.KeymapTxt,
         };
 
-        try
-        {
-            var json = this.ViaBuilder.Build(context);
+        var json = this.ViaBuilder.Build(context);
 
-            await this.BlazorDownloadFileService.DownloadFileFromText($"{this.NameTxt.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
-        }
-        catch
-        {
-            this.ShowError("JSON ファイルの作成に失敗しました。");
-            return;
-        }
+        await this.BlazorDownloadFileService.DownloadFileFromText($"{this.NameTxt.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
     }
 
     private void OnLightingChanged(ChangeEventArgs e)
     {
         this.LightingTxt = e.Value.ToString();
-    }
-
-    private void ResetError()
-    {
-        this.HasError = false;
-        this.ErrorMessage = string.Empty;
-    }
-
-    private void ShowError(string message)
-    {
-        this.ErrorMessage = message;
-        this.HasError = true;
     }
 }
