@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Utf8Json;
 using ViaJsonBuilder.Extensions;
-using ViaJsonBuilder.Models.Via;
+using ViaJsonBuilder.Models.Json.Via;
 
-namespace ViaJsonBuilder.Models.Json
+namespace ViaJsonBuilder.Models.Builder
 {
     public class ViaBuilder : IJsonBuilder
     {

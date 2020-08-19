@@ -1,4 +1,4 @@
-﻿namespace ViaJsonBuilder.Models.Json
+﻿namespace ViaJsonBuilder.Models.Builder
 {
     public struct JsonBuildingContext
     {

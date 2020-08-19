@@ -8,8 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BlazorDownloadFile;
+using ViaJsonBuilder.Models.Builder;
 using ViaJsonBuilder.Models.Extractor;
-using ViaJsonBuilder.Models.Json;
 
 namespace ViaJsonBuilder
 {

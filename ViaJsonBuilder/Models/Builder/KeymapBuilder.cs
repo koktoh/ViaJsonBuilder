@@ -8,7 +8,7 @@ using ViaJsonBuilder.Models.Json.QmkConfigurator;
 using ViaJsonBuilder.Models.Parser;
 using ViaJsonBuilder.Models.ProxyModels;
 
-namespace ViaJsonBuilder.Models.Json
+namespace ViaJsonBuilder.Models.Builder
 {
     public class KeymapBuilder : IJsonBuilder
     {
