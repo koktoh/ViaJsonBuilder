@@ -8,7 +8,7 @@
         <tbody>
             <tr>
                 <td>
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.Raw" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.LayoutDefinition" />
                 </td>
                 <td>
                     <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.QmkConfJson" />
@@ -35,7 +35,7 @@
 
     private string DestTxt { get; set; }
 
-    private JsonBuildingContext Context = new JsonBuildingContext();
+    private KleContext Context = new KleContext();
 
     private bool Validate(IFileListEntry file)
     {
@@ -52,7 +52,7 @@
 
         if (fileName.ToLower().EndsWith(".h"))
         {
-            this.Context.Raw = await reader.ReadToEndAsync();
+            this.Context.LayoutDefinition = await reader.ReadToEndAsync();
         }
         else if (fileName.ToLower().Equals("info.json"))
         {
@@ -75,16 +75,21 @@
         this.pageBase.ResetError();
         this.DestTxt = string.Empty;
 
-        if (this.Context.Raw.IsNullOrWhiteSpace())
+        if (this.Context.LayoutDefinition.IsNullOrWhiteSpace())
         {
             return;
         }
 
         await Task.Run(() =>
         {
+            var context = new JsonBuildingContext
+            {
+                KleContext = this.Context,
+            };
+
             try
             {
-                var json = this.KeymapBuilder.Build(this.Context);
+                var json = this.KeymapBuilder.Build(context);
 
                 if (json.IsNullOrWhiteSpace())
                 {

@@ -62,7 +62,7 @@
 @code {
     private PageLayout pageBase;
 
-    private JsonBuildingContext Context = new JsonBuildingContext
+    private ViaContext Context = new ViaContext
     {
         Lighting = Lighting.none.ToString(),
     };
@@ -114,7 +114,12 @@
 
     private async ValueTask OnDownload()
     {
-        var json = this.ViaBuilder.Build(this.Context);
+        var context = new JsonBuildingContext
+        {
+            ViaContext = this.Context,
+        };
+
+        var json = this.ViaBuilder.Build(context);
 
         await this.BlazorDownloadFileService.DownloadFileFromText($"{this.Context.Name.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
     }

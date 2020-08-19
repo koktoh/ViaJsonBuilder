@@ -23,9 +23,11 @@ namespace ViaJsonBuilder.Models.Builder
 
         public string Build(JsonBuildingContext context)
         {
-            var qcLayout = this.GetQcLayout(context.QmkConfJson);
-            var physicalLayout = this.GetPhysicalLayout(context.Raw);
-            var logicalLayout = this.GetLogicalLayout(context.Raw);
+            var kleContext = context.KleContext;
+
+            var qcLayout = this.GetQcLayout(kleContext.QmkConfJson);
+            var physicalLayout = this.GetPhysicalLayout(kleContext.LayoutDefinition);
+            var logicalLayout = this.GetLogicalLayout(kleContext.LayoutDefinition);
             var injected = this.InjectDesign(physicalLayout, qcLayout);
             var kles = this.ConvertToKleLayout(injected, logicalLayout);
             var json = this.FormatToJson(kles);
