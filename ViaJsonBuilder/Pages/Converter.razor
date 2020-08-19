@@ -17,7 +17,11 @@
 
             <tr>
                 <td colspan="2">
-                    <button class="btn btn-primary" @onclick="this.Convert"><span class="oi oi-loop-square" /> コンバート</button>
+                    <button class="btn btn-primary mr-md-5" @onclick="this.Convert"><span class="oi oi-loop-square" /> コンバート</button>
+                    @foreach (var item in Enum.GetNames(typeof(ConvertKind)))
+                    {
+                        <span class="ml-md-2"><input type="radio" name="convert_type" value="@item" @onchange="this.OnRadioChanged" checked="@(this.CompareRadioValue(item))" /> @this.DisplayStrDict[item]</span>
+                    }
                 </td>
             </tr>
 
@@ -33,9 +37,36 @@
 @code {
     private PageLayout pageBase;
 
+    private readonly IReadOnlyDictionary<string, string> DisplayStrDict = new Dictionary<string, string>
+    {
+        { ConvertKind.VIA.ToString(), "VIA" },
+        { ConvertKind.KLE.ToString(), "Plane KLE" },
+    };
+
     private string DestTxt { get; set; }
 
-    private KleContext Context = new KleContext();
+    private KleContext Context = new KleContext
+    {
+        ConvertKind = ConvertKind.VIA,
+    };
+
+    private void OnRadioChanged(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<ConvertKind>(args.Value.ToString(), out var result))
+        {
+            this.Context.ConvertKind = result;
+        }
+    }
+
+    private bool CompareRadioValue(string value)
+    {
+        if (Enum.TryParse<ConvertKind>(value, out var result))
+        {
+            return this.Context.ConvertKind == result;
+        }
+
+        return false;
+    }
 
     private bool Validate(IFileListEntry file)
     {
