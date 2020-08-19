@@ -11,24 +11,24 @@
             <tr>
                 <td style="width:100px">Name</td>
                 <td style="width:100px"></td>
-                <td><input type="text" @bind="@NameTxt" /></td>
+                <td><input type="text" @bind="@Context.Name" /></td>
             </tr>
             <tr>
                 <td>Vendor ID</td>
                 <td></td>
-                <td><input type="text" @bind="@VendorIdTxt" /></td>
+                <td><input type="text" @bind="@Context.VendorId" /></td>
             </tr>
             <tr>
                 <td>Product ID</td>
                 <td></td>
-                <td><input type="text" @bind="@ProductIdTxt" /></td>
+                <td><input type="text" @bind="@Context.ProductId" /></td>
             </tr>
             <tr>
                 <td>Lighting</td>
                 <td></td>
                 <td>
                     <select @onchange="OnLightingChanged">
-                        @foreach (var item in LightingList)
+                        @foreach (var item in Enum.GetNames(typeof(Lighting)))
                         {
                             <option value="@item">@item</option>
                         }
@@ -38,22 +38,22 @@
             <tr>
                 <td>Matrix</td>
                 <td>Rows</td>
-                <td><input type="number" @bind="@RowsTxt" /></td>
+                <td><input type="number" @bind="@Context.Rows" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td>Cols</td>
-                <td><input type="number" @bind="@ColsTxt" /></td>
+                <td><input type="number" @bind="@Context.Cols" /></td>
             </tr>
             <tr>
                 <td>Layouts</td>
                 <td>Labels</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@LabelsTxt" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@Context.Labels" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td valign="top">Keymap</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@KeymapTxt" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@Context.Keymap" /></td>
             </tr>
         </tbody>
     </table>
@@ -62,16 +62,10 @@
 @code {
     private PageLayout pageBase;
 
-    private string NameTxt { get; set; }
-    private string VendorIdTxt { get; set; }
-    private string ProductIdTxt { get; set; }
-    private string LightingTxt { get; set; } = Lighting.none.ToString();
-    private string RowsTxt { get; set; }
-    private string ColsTxt { get; set; }
-    private string LabelsTxt { get; set; }
-    private string KeymapTxt { get; set; }
-
-    private IEnumerable<string> LightingList = Enum.GetNames(typeof(Lighting));
+    private JsonBuildingContext Context = new JsonBuildingContext
+    {
+        Lighting = Lighting.none.ToString(),
+    };
 
     private bool Validate(IFileListEntry file)
     {
@@ -100,7 +94,7 @@
         }
         else if (fileName.ToLower().EndsWith(".json"))
         {
-            this.KeymapTxt = await reader.ReadToEndAsync();
+            this.Context.Keymap = await reader.ReadToEndAsync();
         }
     }
 
@@ -110,35 +104,23 @@
         {
             var info = this.Extractor.Extract(target);
 
-            this.NameTxt = info.Name;
-            this.VendorIdTxt = info.VendorId;
-            this.ProductIdTxt = info.ProductId;
-            this.RowsTxt = info.Rows;
-            this.ColsTxt = info.Cols;
+            this.Context.Name = info.Name;
+            this.Context.VendorId = info.VendorId;
+            this.Context.ProductId = info.ProductId;
+            this.Context.Rows = info.Rows;
+            this.Context.Cols = info.Cols;
         });
     }
 
     private async ValueTask OnDownload()
     {
-        var context = new JsonBuildingContext
-        {
-            Name = this.NameTxt,
-            VendorId = this.VendorIdTxt,
-            ProductId = this.ProductIdTxt,
-            Lighting = this.LightingTxt,
-            Rows = this.RowsTxt,
-            Cols = this.ColsTxt,
-            Labels = this.LabelsTxt,
-            Keymap = this.KeymapTxt,
-        };
+        var json = this.ViaBuilder.Build(this.Context);
 
-        var json = this.ViaBuilder.Build(context);
-
-        await this.BlazorDownloadFileService.DownloadFileFromText($"{this.NameTxt.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
+        await this.BlazorDownloadFileService.DownloadFileFromText($"{this.Context.Name.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
     }
 
     private void OnLightingChanged(ChangeEventArgs e)
     {
-        this.LightingTxt = e.Value.ToString();
+        this.Context.Lighting = e.Value.ToString();
     }
 }

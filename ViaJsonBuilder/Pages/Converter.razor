@@ -8,10 +8,10 @@
         <tbody>
             <tr>
                 <td>
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@SrcTxt" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.Raw" />
                 </td>
                 <td>
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@QmkConfJsonTxt" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.QmkConfJson" />
                 </td>
             </tr>
 
@@ -33,9 +33,9 @@
 @code {
     private PageLayout pageBase;
 
-    private string SrcTxt { get; set; }
-    private string QmkConfJsonTxt { get; set; }
     private string DestTxt { get; set; }
+
+    private JsonBuildingContext Context = new JsonBuildingContext();
 
     private bool Validate(IFileListEntry file)
     {
@@ -52,11 +52,11 @@
 
         if (fileName.ToLower().EndsWith(".h"))
         {
-            this.SrcTxt = await reader.ReadToEndAsync();
+            this.Context.Raw = await reader.ReadToEndAsync();
         }
         else if (fileName.ToLower().Equals("info.json"))
         {
-            this.QmkConfJsonTxt = await reader.ReadToEndAsync();
+            this.Context.QmkConfJson = await reader.ReadToEndAsync();
         }
     }
 
@@ -75,22 +75,16 @@
         this.pageBase.ResetError();
         this.DestTxt = string.Empty;
 
-        if (this.SrcTxt.IsNullOrWhiteSpace())
+        if (this.Context.Raw.IsNullOrWhiteSpace())
         {
             return;
         }
 
         await Task.Run(() =>
         {
-            var context = new JsonBuildingContext
-            {
-                Raw = this.SrcTxt,
-                QmkConfJson = this.QmkConfJsonTxt,
-            };
-
             try
             {
-                var json = this.KeymapBuilder.Build(context);
+                var json = this.KeymapBuilder.Build(this.Context);
 
                 if (json.IsNullOrWhiteSpace())
                 {
