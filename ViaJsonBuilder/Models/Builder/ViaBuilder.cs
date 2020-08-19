@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Utf8Json;
 using ViaJsonBuilder.Extensions;
-using ViaJsonBuilder.Models.Via;
+using ViaJsonBuilder.Models.Json.Via;
 
-namespace ViaJsonBuilder.Models.Json
+namespace ViaJsonBuilder.Models.Builder
 {
     public class ViaBuilder : IJsonBuilder
     {
@@ -18,22 +18,24 @@ namespace ViaJsonBuilder.Models.Json
 
         private ViaModel GetViaModel(JsonBuildingContext context)
         {
-            var name = context.Name;
-            var vendorId = context.VendorId;
-            var productId = context.ProductId;
+            var viaContext = context.ViaContext;
+
+            var name = viaContext.Name;
+            var vendorId = viaContext.VendorId;
+            var productId = viaContext.ProductId;
 
             return new ViaModel
             {
                 Name = name,
                 VenderId = vendorId,
                 ProductId = productId,
-                Lighting = this.GetLighting(context),
-                Matrix = this.GetMatrix(context),
-                Layouts = this.GetLayouts(context),
+                Lighting = this.GetLighting(viaContext),
+                Matrix = this.GetMatrix(viaContext),
+                Layouts = this.GetLayouts(viaContext),
             };
         }
 
-        private Lighting GetLighting(JsonBuildingContext context)
+        private Lighting GetLighting(ViaContext context)
         {
             if (Enum.TryParse<Lighting>(context.Lighting, out var lighting))
             {
@@ -43,7 +45,7 @@ namespace ViaJsonBuilder.Models.Json
             return Lighting.none;
         }
 
-        private Layouts GetLayouts(JsonBuildingContext context)
+        private Layouts GetLayouts(ViaContext context)
         {
             return new Layouts
             {
@@ -52,7 +54,7 @@ namespace ViaJsonBuilder.Models.Json
             };
         }
 
-        private IEnumerable<dynamic> GetLabels(JsonBuildingContext context)
+        private IEnumerable<dynamic> GetLabels(ViaContext context)
         {
             var labels = context.Labels;
 
@@ -86,7 +88,7 @@ namespace ViaJsonBuilder.Models.Json
             return JsonSerializer.Deserialize<IEnumerable<dynamic>>(formatted);
         }
 
-        private dynamic GetKeymap(JsonBuildingContext context)
+        private dynamic GetKeymap(ViaContext context)
         {
             var keymap = context.Keymap;
 
@@ -98,7 +100,7 @@ namespace ViaJsonBuilder.Models.Json
             return default;
         }
 
-        private Matrix GetMatrix(JsonBuildingContext context)
+        private Matrix GetMatrix(ViaContext context)
         {
             var matrix = new Matrix();
 

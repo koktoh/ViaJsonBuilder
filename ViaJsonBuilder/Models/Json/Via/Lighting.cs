@@ -1,4 +1,4 @@
-﻿namespace ViaJsonBuilder.Models.Via
+﻿namespace ViaJsonBuilder.Models.Json.Via
 {
     public enum Lighting
     {

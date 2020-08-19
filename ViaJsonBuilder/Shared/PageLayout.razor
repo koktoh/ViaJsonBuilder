@@ -1,0 +1,69 @@
+﻿@inherits UploadComponentBase
+
+<h1>@Title</h1>
+
+@if (this.HasError)
+{
+    <div class="oi oi-warning alert alert-danger">
+        @Message
+    </div>
+}
+
+<div class="drag-drop-zone">
+    <InputFile OnChange="this.OnUpload" />
+    @Status
+</div>
+
+@ChildContent
+
+<table class="table table-borderless">
+    <tbody>
+        <tr>
+            <td>
+                <button class="btn btn-primary" @onclick=@(async () => await this.OnDownload())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public Func<IFileListEntry, bool> ValidateFunc { get; set; }
+
+    [Parameter]
+    public Func<IFileListEntry, Task> OnUploadFuncAsync { get; set; }
+
+    [Parameter]
+    public Func<ValueTask> OnDownloadFuncAsync { get; set; }
+
+    protected override bool Validate(IFileListEntry file)
+    {
+        return this.ValidateFunc(file);
+    }
+
+    protected override Task OnUploadTaskAsync(IFileListEntry file)
+    {
+        return this.OnUploadFuncAsync(file);
+    }
+
+    private async ValueTask OnDownload()
+    {
+        this.ResetError();
+
+        try
+        {
+            await this.OnDownloadFuncAsync();
+        }
+        catch
+        {
+            this.ShowError("JSON ファイルの作成に失敗しました。");
+            return;
+        }
+    }
+}

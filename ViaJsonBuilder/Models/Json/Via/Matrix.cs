@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace ViaJsonBuilder.Models.Via
+namespace ViaJsonBuilder.Models.Json.Via
 {
     public class Matrix
     {

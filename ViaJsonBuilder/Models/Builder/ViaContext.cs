@@ -1,6 +1,6 @@
-﻿namespace ViaJsonBuilder.Models.Json
+﻿namespace ViaJsonBuilder.Models.Builder
 {
-    public struct JsonBuildingContext
+    public struct ViaContext
     {
         public string Name { get; set; }
         public string VendorId { get; set; }
@@ -10,7 +10,5 @@
         public string Cols { get; set; }
         public string Labels { get; set; }
         public string Keymap { get; set; }
-        public string Raw { get; set; }
-        public string QmkConfJson { get; set; }
     }
 }

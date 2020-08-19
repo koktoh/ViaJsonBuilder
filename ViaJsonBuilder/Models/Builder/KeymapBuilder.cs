@@ -8,7 +8,7 @@ using ViaJsonBuilder.Models.Json.QmkConfigurator;
 using ViaJsonBuilder.Models.Parser;
 using ViaJsonBuilder.Models.ProxyModels;
 
-namespace ViaJsonBuilder.Models.Json
+namespace ViaJsonBuilder.Models.Builder
 {
     public class KeymapBuilder : IJsonBuilder
     {
@@ -23,11 +23,13 @@ namespace ViaJsonBuilder.Models.Json
 
         public string Build(JsonBuildingContext context)
         {
-            var qcLayout = this.GetQcLayout(context.QmkConfJson);
-            var physicalLayout = this.GetPhysicalLayout(context.Raw);
-            var logicalLayout = this.GetLogicalLayout(context.Raw);
+            var kleContext = context.KleContext;
+
+            var qcLayout = this.GetQcLayout(kleContext.QmkConfJson);
+            var physicalLayout = this.GetPhysicalLayout(kleContext.LayoutDefinition);
+            var logicalLayout = this.GetLogicalLayout(kleContext.LayoutDefinition);
             var injected = this.InjectDesign(physicalLayout, qcLayout);
-            var kles = this.ConvertToKleLayout(injected, logicalLayout);
+            var kles = this.ConvertToKleLayout(kleContext, injected, logicalLayout);
             var json = this.FormatToJson(kles);
 
             return json;
@@ -120,7 +122,7 @@ namespace ViaJsonBuilder.Models.Json
             };
         }
 
-        private IEnumerable<IEnumerable<KleKey>> ConvertToKleLayout(PhysicalLayoutModel physicalLayout, LogicalLayoutModel logicalLayout)
+        private IEnumerable<IEnumerable<KleKey>> ConvertToKleLayout(KleContext context, PhysicalLayoutModel physicalLayout, LogicalLayoutModel logicalLayout)
         {
             return physicalLayout.PhysicalRows
                 .Select(row =>
@@ -140,11 +142,19 @@ namespace ViaJsonBuilder.Models.Json
                                 Height = key.Height,
                             };
 
-                            return new KleKey
+                            return context.ConvertKind switch
                             {
-                                LegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
-                                LegendCenterLeft = key.Label,
-                                Option = option,
+                                ConvertKind.KLE => new KleKey
+                                {
+                                    LegendTopLeft = key.Label,
+                                    Option = option,
+                                },
+                                _ => new KleKey
+                                {
+                                    LegendTopLeft = $"{logicalKey.Row},{logicalKey.Col}",
+                                    LegendCenterLeft = key.Label,
+                                    Option = option,
+                                },
                             };
                         });
                 });
