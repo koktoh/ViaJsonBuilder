@@ -1,9 +1,11 @@
 ﻿@page "/converter"
+@inject ClipboardService Clipboard
+@inject ISessionStorageService SessionStorage
 @inject IBlazorDownloadFileService BlazorDownloadFileService
 @inject KeymapBuilder KeymapBuilder
 
 <PageLayout @ref="pageBase" Title="Keymap Converter" TargetFiles="@(new[] { "<keyboard>.h","info.json"})"
-            ValidateFunc="this.Validate" OnUploadFuncAsync="this.OnUpload" OnDownloadFuncAsync="this.OnDownload">
+            ValidateFunc="this.Validate" OnUploadFuncAsync="this.OnUpload" OnDownloadFuncAsync="this.OnDownload" OnCopyClipboard="this.OnCopyClipboard">
     <table class="table table-borderless">
         <tbody>
             <tr>
@@ -20,14 +22,14 @@
                     <button class="btn btn-primary mr-md-5" @onclick="this.Convert"><span class="oi oi-loop-square" /> コンバート</button>
                     @foreach (var item in Enum.GetNames(typeof(ConvertKind)))
                     {
-                        <span class="ml-md-2"><input type="radio" name="convert_type" value="@item" @onchange="this.OnRadioChanged" checked="@(this.CompareRadioValue(item))" /> @this.DisplayStrDict[item]</span>
+                        <span class="ml-md-2"><input type="radio" name="convert_type" value="@item" @onchange="this.OnRadioChangedAsync" checked="@(this.CompareRadioValue(item))" /> @this.DisplayStrDict[item]</span>
                     }
                 </td>
             </tr>
 
             <tr>
                 <td colspan="2">
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.DestTxt" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" value="@this.Keymap" @onchange="this.OnKeymapChangedAsync" />
                 </td>
             </tr>
         </tbody>
@@ -43,30 +45,12 @@
         { ConvertKind.KLE.ToString(), "Plane KLE" },
     };
 
-    private string DestTxt { get; set; }
-
     private KleContext Context = new KleContext
     {
         ConvertKind = ConvertKind.VIA,
     };
 
-    private void OnRadioChanged(ChangeEventArgs args)
-    {
-        if (Enum.TryParse<ConvertKind>(args.Value.ToString(), out var result))
-        {
-            this.Context.ConvertKind = result;
-        }
-    }
-
-    private bool CompareRadioValue(string value)
-    {
-        if (Enum.TryParse<ConvertKind>(value, out var result))
-        {
-            return this.Context.ConvertKind == result;
-        }
-
-        return false;
-    }
+    private string Keymap { get; set; }
 
     private bool Validate(IFileListEntry file)
     {
@@ -89,29 +73,31 @@
         {
             this.Context.QmkConfJson = await reader.ReadToEndAsync();
         }
+
+        await this.SaveSessionStorageAsync();
     }
 
     private async ValueTask OnDownload()
     {
-        if (this.DestTxt.IsNullOrWhiteSpace())
+        if (this.Keymap.IsNullOrWhiteSpace())
         {
             return;
         }
 
-        await this.BlazorDownloadFileService.DownloadFileFromText("kle.json", this.DestTxt, "application/octet-stream");
+        await this.BlazorDownloadFileService.DownloadFileFromText("kle.json", this.Keymap, "application/octet-stream");
     }
 
     private async Task Convert()
     {
         this.pageBase.ResetError();
-        this.DestTxt = string.Empty;
+        this.Keymap = string.Empty;
 
         if (this.Context.LayoutDefinition.IsNullOrWhiteSpace())
         {
             return;
         }
 
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             var context = new JsonBuildingContext
             {
@@ -128,13 +114,75 @@
                     return;
                 }
 
-                this.DestTxt = json;
+                this.Keymap = json;
             }
             catch
             {
                 this.pageBase.ShowError("JSON への変換に失敗しました。");
                 return;
             }
+            finally
+            {
+                await this.SaveSessionStorageAsync();
+            }
         });
     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await this.LoadSessionStorageAsync();
+    }
+
+    private async Task OnRadioChangedAsync(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<ConvertKind>(e.Value.ToString(), out var result))
+        {
+            this.Context.ConvertKind = result;
+            await this.SaveSessionStorageAsync();
+        }
+    }
+
+    private async Task OnKeymapChangedAsync(ChangeEventArgs e)
+    {
+        this.Keymap = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private bool CompareRadioValue(string value)
+    {
+        if (Enum.TryParse<ConvertKind>(value, out var result))
+        {
+            return this.Context.ConvertKind == result;
+        }
+
+        return false;
+    }
+
+    private async Task LoadSessionStorageAsync()
+    {
+        this.Context = await this.SessionStorage.GetItemAsync<KleContext>(nameof(KleContext));
+        this.Keymap = await this.SessionStorage.GetItemAsync<string>(nameof(this.Keymap));
+    }
+
+    private async Task SaveSessionStorageAsync()
+    {
+        await this.SessionStorage.SetItemAsync(nameof(KleContext), this.Context);
+        await this.SessionStorage.SetItemAsync(nameof(this.Keymap), this.Keymap);
+    }
+
+    private async Task OnCopyClipboard()
+    {
+        this.pageBase.ResetError();
+
+        try
+        {
+            await this.Clipboard.WriteTextAsync(this.Keymap);
+        }
+        catch
+        {
+            this.pageBase.ShowError("クリップボードへのコピーに失敗しました。ダウンロードを使用してください。");
+        }
+    }
+
 }

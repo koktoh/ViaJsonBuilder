@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using CurrieTechnologies.Razor.Clipboard;
+using Blazored.SessionStorage;
 using BlazorDownloadFile;
 using ViaJsonBuilder.Models.Builder;
 using ViaJsonBuilder.Models.Extractor;
@@ -25,6 +27,8 @@ namespace ViaJsonBuilder
             builder.Services.AddTransient(sp => new ViaBuilder());
             builder.Services.AddTransient(sp => new KeymapBuilder());
             builder.Services.AddBlazorDownloadFile();
+            builder.Services.AddBlazoredSessionStorage();
+            builder.Services.AddClipboard();
 
             await builder.Build().RunAsync();
         }
