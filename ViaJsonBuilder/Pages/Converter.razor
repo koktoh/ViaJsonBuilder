@@ -27,7 +27,7 @@
 
             <tr>
                 <td colspan="2">
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.DestTxt" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Keymap" />
                 </td>
             </tr>
         </tbody>
@@ -43,7 +43,7 @@
         { ConvertKind.KLE.ToString(), "Plane KLE" },
     };
 
-    private string DestTxt { get; set; }
+    private string Keymap { get; set; }
 
     private KleContext Context = new KleContext
     {
@@ -93,18 +93,18 @@
 
     private async ValueTask OnDownload()
     {
-        if (this.DestTxt.IsNullOrWhiteSpace())
+        if (this.Keymap.IsNullOrWhiteSpace())
         {
             return;
         }
 
-        await this.BlazorDownloadFileService.DownloadFileFromText("kle.json", this.DestTxt, "application/octet-stream");
+        await this.BlazorDownloadFileService.DownloadFileFromText("kle.json", this.Keymap, "application/octet-stream");
     }
 
     private async Task Convert()
     {
         this.pageBase.ResetError();
-        this.DestTxt = string.Empty;
+        this.Keymap = string.Empty;
 
         if (this.Context.LayoutDefinition.IsNullOrWhiteSpace())
         {
@@ -128,7 +128,7 @@
                     return;
                 }
 
-                this.DestTxt = json;
+                this.Keymap = json;
             }
             catch
             {
