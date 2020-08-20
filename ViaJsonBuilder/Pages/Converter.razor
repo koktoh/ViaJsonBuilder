@@ -1,4 +1,5 @@
 ﻿@page "/converter"
+@inject ISessionStorageService SessionStorage
 @inject IBlazorDownloadFileService BlazorDownloadFileService
 @inject KeymapBuilder KeymapBuilder
 
@@ -20,14 +21,14 @@
                     <button class="btn btn-primary mr-md-5" @onclick="this.Convert"><span class="oi oi-loop-square" /> コンバート</button>
                     @foreach (var item in Enum.GetNames(typeof(ConvertKind)))
                     {
-                        <span class="ml-md-2"><input type="radio" name="convert_type" value="@item" @onchange="this.OnRadioChanged" checked="@(this.CompareRadioValue(item))" /> @this.DisplayStrDict[item]</span>
+                        <span class="ml-md-2"><input type="radio" name="convert_type" value="@item" @onchange="this.OnRadioChangedAsync" checked="@(this.CompareRadioValue(item))" /> @this.DisplayStrDict[item]</span>
                     }
                 </td>
             </tr>
 
             <tr>
                 <td colspan="2">
-                    <textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Keymap" />
+                    <textarea style="font-family: monospace; width:100%" rows="10" value="@this.Keymap" @onchange="this.OnKeymapChangedAsync" />
                 </td>
             </tr>
         </tbody>
@@ -43,30 +44,12 @@
         { ConvertKind.KLE.ToString(), "Plane KLE" },
     };
 
-    private string Keymap { get; set; }
-
     private KleContext Context = new KleContext
     {
         ConvertKind = ConvertKind.VIA,
     };
 
-    private void OnRadioChanged(ChangeEventArgs args)
-    {
-        if (Enum.TryParse<ConvertKind>(args.Value.ToString(), out var result))
-        {
-            this.Context.ConvertKind = result;
-        }
-    }
-
-    private bool CompareRadioValue(string value)
-    {
-        if (Enum.TryParse<ConvertKind>(value, out var result))
-        {
-            return this.Context.ConvertKind == result;
-        }
-
-        return false;
-    }
+    private string Keymap { get; set; }
 
     private bool Validate(IFileListEntry file)
     {
@@ -89,6 +72,8 @@
         {
             this.Context.QmkConfJson = await reader.ReadToEndAsync();
         }
+
+        await this.SaveSessionStorageAsync();
     }
 
     private async ValueTask OnDownload()
@@ -111,7 +96,7 @@
             return;
         }
 
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             var context = new JsonBuildingContext
             {
@@ -135,6 +120,53 @@
                 this.pageBase.ShowError("JSON への変換に失敗しました。");
                 return;
             }
+            finally
+            {
+                await this.SaveSessionStorageAsync();
+            }
         });
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await this.LoadSessionStorageAsync();
+    }
+
+    private async Task OnRadioChangedAsync(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<ConvertKind>(e.Value.ToString(), out var result))
+        {
+            this.Context.ConvertKind = result;
+            await this.SaveSessionStorageAsync();
+        }
+    }
+
+    private async Task OnKeymapChangedAsync(ChangeEventArgs e)
+    {
+        this.Keymap = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private bool CompareRadioValue(string value)
+    {
+        if (Enum.TryParse<ConvertKind>(value, out var result))
+        {
+            return this.Context.ConvertKind == result;
+        }
+
+        return false;
+    }
+
+    private async Task LoadSessionStorageAsync()
+    {
+        this.Context = await this.SessionStorage.GetItemAsync<KleContext>(nameof(KleContext));
+        this.Keymap = await this.SessionStorage.GetItemAsync<string>(nameof(this.Keymap));
+    }
+
+    private async Task SaveSessionStorageAsync()
+    {
+        await this.SessionStorage.SetItemAsync(nameof(KleContext), this.Context);
+        await this.SessionStorage.SetItemAsync(nameof(this.Keymap), this.Keymap);
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "/builder"
 @using ViaJsonBuilder.Models.Json.Via
+@inject ISessionStorageService SessionStorage
 @inject IBlazorDownloadFileService BlazorDownloadFileService
 @inject KeyboardConfigInfoExtractor Extractor
 @inject ViaBuilder ViaBuilder
@@ -11,23 +12,23 @@
             <tr>
                 <td style="width:100px">Name</td>
                 <td style="width:100px"></td>
-                <td><input type="text" @bind="@this.Context.Name" /></td>
+                <td><input type="text" value="@this.Context.Name" @onchange="@this.OnNameChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Vendor ID</td>
                 <td></td>
-                <td><input type="text" @bind="@this.Context.VendorId" /></td>
+                <td><input type="text" value="@this.Context.VendorId" @onchange="@this.OnVendorIdChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Product ID</td>
                 <td></td>
-                <td><input type="text" @bind="@this.Context.ProductId" /></td>
+                <td><input type="text" value="@this.Context.ProductId" @onchange="this.OnProductIdChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Lighting</td>
                 <td></td>
                 <td>
-                    <select @onchange="this.OnLightingChanged">
+                    <select @onchange="this.OnLightingChangedAsync">
                         @foreach (var item in Enum.GetNames(typeof(Lighting)))
                         {
                             <option value="@item">@item</option>
@@ -38,22 +39,22 @@
             <tr>
                 <td>Matrix</td>
                 <td>Rows</td>
-                <td><input type="number" @bind="@this.Context.Rows" /></td>
+                <td><input type="number" value="@this.Context.Rows" @onchange="this.OnRowsChangedAsync" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td>Cols</td>
-                <td><input type="number" @bind="@this.Context.Cols" /></td>
+                <td><input type="number" value="@this.Context.Cols" @onchange="@this.OnColsChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Layouts</td>
                 <td>Labels</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@this.Context.Labels" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="1" value="@this.Context.Labels" @onchange="@this.OnLabelsChangedAsync" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td valign="top">Keymap</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.Keymap" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="10" value="@this.Context.Keymap" @onchange="@this.OnKeymapChangedAsync" /></td>
             </tr>
         </tbody>
     </table>
@@ -96,6 +97,8 @@
         {
             this.Context.Keymap = await reader.ReadToEndAsync();
         }
+
+        await this.SaveSessionStorageAsync();
     }
 
     private async Task FillPropertiesAsync(string target)
@@ -124,8 +127,67 @@
         await this.BlazorDownloadFileService.DownloadFileFromText($"{this.Context.Name.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
     }
 
-    private void OnLightingChanged(ChangeEventArgs e)
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await this.LoadSessionStorageAsync();
+    }
+
+    private async Task OnNameChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.Name = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnVendorIdChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.VendorId = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnProductIdChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.ProductId = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnRowsChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.Rows = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnColsChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.Cols = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnLightingChangedAsync(ChangeEventArgs e)
     {
         this.Context.Lighting = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnLabelsChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.Labels = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task OnKeymapChangedAsync(ChangeEventArgs e)
+    {
+        this.Context.Keymap = e.Value.ToString();
+        await this.SaveSessionStorageAsync();
+    }
+
+    private async Task LoadSessionStorageAsync()
+    {
+        this.Context = await this.SessionStorage.GetItemAsync<ViaContext>(nameof(ViaContext));
+    }
+
+    private async Task SaveSessionStorageAsync()
+    {
+        await this.SessionStorage.SetItemAsync(nameof(ViaContext), this.Context);
     }
 }
