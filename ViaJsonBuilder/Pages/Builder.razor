@@ -199,16 +199,17 @@
 
     private async Task OnCopyClipboard()
     {
+        this.pageBase.ResetError();
+
         try
         {
             var json = this.BuildJson();
 
             await this.Clipboard.WriteTextAsync(json);
         }
-        catch (Exception ex)
+        catch
         {
-            this.pageBase.ShowError(ex.Message);
+            this.pageBase.ShowError("クリップボードへのコピーに失敗しました。ダウンロードを使用してください。");
         }
     }
-
 }
