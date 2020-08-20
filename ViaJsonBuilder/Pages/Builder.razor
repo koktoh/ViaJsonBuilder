@@ -11,23 +11,23 @@
             <tr>
                 <td style="width:100px">Name</td>
                 <td style="width:100px"></td>
-                <td><input type="text" @bind="@Context.Name" /></td>
+                <td><input type="text" @bind="@this.Context.Name" /></td>
             </tr>
             <tr>
                 <td>Vendor ID</td>
                 <td></td>
-                <td><input type="text" @bind="@Context.VendorId" /></td>
+                <td><input type="text" @bind="@this.Context.VendorId" /></td>
             </tr>
             <tr>
                 <td>Product ID</td>
                 <td></td>
-                <td><input type="text" @bind="@Context.ProductId" /></td>
+                <td><input type="text" @bind="@this.Context.ProductId" /></td>
             </tr>
             <tr>
                 <td>Lighting</td>
                 <td></td>
                 <td>
-                    <select @onchange="OnLightingChanged">
+                    <select @onchange="this.OnLightingChanged">
                         @foreach (var item in Enum.GetNames(typeof(Lighting)))
                         {
                             <option value="@item">@item</option>
@@ -38,22 +38,22 @@
             <tr>
                 <td>Matrix</td>
                 <td>Rows</td>
-                <td><input type="number" @bind="@Context.Rows" /></td>
+                <td><input type="number" @bind="@this.Context.Rows" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td>Cols</td>
-                <td><input type="number" @bind="@Context.Cols" /></td>
+                <td><input type="number" @bind="@this.Context.Cols" /></td>
             </tr>
             <tr>
                 <td>Layouts</td>
                 <td>Labels</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@Context.Labels" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="1" @bind="@this.Context.Labels" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td valign="top">Keymap</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@Context.Keymap" /></td>
+                <td><textarea style="font-family: monospace; width:100%" rows="10" @bind="@this.Context.Keymap" /></td>
             </tr>
         </tbody>
     </table>
