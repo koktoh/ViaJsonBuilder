@@ -21,6 +21,7 @@
         <tr>
             <td>
                 <button class="btn btn-primary" @onclick=@(async () => await this.OnDownload())><span class="oi oi-cloud-download" /> JSON ダウンロード</button>
+                <button class="btn btn-primary ml-md-2" @onclick="this.OnCopyClipboard"><span class="oi oi-clipboard" /> クリップボードへコピー</button>
             </td>
         </tr>
     </tbody>
@@ -41,6 +42,9 @@
 
     [Parameter]
     public Func<ValueTask> OnDownloadFuncAsync { get; set; }
+
+    [Parameter]
+    public EventCallback OnCopyClipboard { get; set; }
 
     protected override bool Validate(IFileListEntry file)
     {

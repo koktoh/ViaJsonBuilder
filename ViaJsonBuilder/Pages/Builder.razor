@@ -1,12 +1,13 @@
 ﻿@page "/builder"
 @using ViaJsonBuilder.Models.Json.Via
+@inject ClipboardService Clipboard
 @inject ISessionStorageService SessionStorage
 @inject IBlazorDownloadFileService BlazorDownloadFileService
 @inject KeyboardConfigInfoExtractor Extractor
 @inject ViaBuilder ViaBuilder
 
 <PageLayout @ref="pageBase" Title="VIA JSON Builder" TargetFiles="@(new[] { "config.h","JSON ファイル"})"
-            ValidateFunc="this.Validate" OnUploadFuncAsync="this.OnUpload" OnDownloadFuncAsync="this.OnDownload">
+            ValidateFunc="this.Validate" OnUploadFuncAsync="this.OnUpload" OnDownloadFuncAsync="this.OnDownload" OnCopyClipboard="this.OnCopyClipboard">
     <table class="table table-borderless">
         <tbody>
             <tr>
@@ -115,14 +116,19 @@
         });
     }
 
-    private async ValueTask OnDownload()
+    private string BuildJson()
     {
         var context = new JsonBuildingContext
         {
             ViaContext = this.Context,
         };
 
-        var json = this.ViaBuilder.Build(context);
+        return this.ViaBuilder.Build(context);
+    }
+
+    private async ValueTask OnDownload()
+    {
+        var json = this.BuildJson();
 
         await this.BlazorDownloadFileService.DownloadFileFromText($"{this.Context.Name.ToLower().Replace(" ", "_")}.json", json, "application/octet-stream");
     }
@@ -190,4 +196,19 @@
     {
         await this.SessionStorage.SetItemAsync(nameof(ViaContext), this.Context);
     }
+
+    private async Task OnCopyClipboard()
+    {
+        try
+        {
+            var json = this.BuildJson();
+
+            await this.Clipboard.WriteTextAsync(json);
+        }
+        catch (Exception ex)
+        {
+            this.pageBase.ShowError(ex.Message);
+        }
+    }
+
 }
