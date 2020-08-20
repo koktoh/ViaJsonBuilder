@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Utf8Json;
 using ViaJsonBuilder.Extensions;
 using ViaJsonBuilder.Models.Json.Via;
@@ -54,7 +55,7 @@ namespace ViaJsonBuilder.Models.Builder
             };
         }
 
-        private IEnumerable<dynamic> GetLabels(ViaContext context)
+        private IEnumerable<object> GetLabels(ViaContext context)
         {
             var labels = context.Labels;
 
@@ -80,24 +81,29 @@ namespace ViaJsonBuilder.Models.Builder
                 })
                 .JoinComma();
 
-            if(!formatted.StartsWith("["))
+            if (!formatted.StartsWith("["))
             {
                 formatted = $"[{formatted}]";
             }
 
-            return JsonSerializer.Deserialize<IEnumerable<dynamic>>(formatted);
+            return JsonSerializer.Deserialize<IEnumerable<object>>(formatted);
         }
 
-        private dynamic GetKeymap(ViaContext context)
+        private object GetKeymap(ViaContext context)
         {
             var keymap = context.Keymap;
 
-            if (keymap.HasMeaningfulValue())
+            if (keymap.IsNullOrWhiteSpace())
             {
-                return JsonSerializer.Deserialize<dynamic>(keymap);
+                return default;
             }
 
-            return default;
+            if(Regex.IsMatch(keymap, @"^\s*\[\s*\[(.+,?\s*)*\]\s*\]\s*$"))
+            {
+                return JsonSerializer.Deserialize<object>(keymap);
+            }
+
+            return JsonSerializer.Deserialize<object>($"[{keymap}]");
         }
 
         private Matrix GetMatrix(ViaContext context)
