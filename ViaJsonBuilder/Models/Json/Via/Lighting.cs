@@ -8,6 +8,6 @@
         qmk_backlight_rgblight,
         wt_rgb_backlight,
         wt_mono_backlight,
-        custom,
+        //custom,
     }
 }
