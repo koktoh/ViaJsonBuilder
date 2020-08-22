@@ -12,27 +12,27 @@ namespace ViaJsonBuilder.Models.Builder
     {
         public string Build(JsonBuildingContext context)
         {
-            var model = this.GetViaModel(context);
+            var viaContext = context.ViaContext;
+
+            var model = this.GetViaModel(viaContext);
 
             return JsonSerializer.ToJsonString(model);
         }
 
-        private ViaModel GetViaModel(JsonBuildingContext context)
+        private ViaModel GetViaModel(ViaContext context)
         {
-            var viaContext = context.ViaContext;
-
-            var name = viaContext.Name;
-            var vendorId = viaContext.VendorId;
-            var productId = viaContext.ProductId;
+            var name = context.Name;
+            var vendorId = context.VendorId;
+            var productId = context.ProductId;
 
             return new ViaModel
             {
                 Name = name,
                 VenderId = vendorId,
                 ProductId = productId,
-                Lighting = this.GetLighting(viaContext),
-                Matrix = this.GetMatrix(viaContext),
-                Layouts = this.GetLayouts(viaContext),
+                Lighting = this.GetLighting(context),
+                Matrix = this.GetMatrix(context),
+                Layouts = this.GetLayouts(context),
             };
         }
 
