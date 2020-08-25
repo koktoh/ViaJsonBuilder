@@ -18,12 +18,12 @@
             <tr>
                 <td>Vendor ID</td>
                 <td></td>
-                <td><input type="text" value="@this.Context.VendorId" @onchange="@this.OnVendorIdChangedAsync" /></td>
+                <td><input type="text" class="text-monospace" value="@this.Context.VendorId" @onchange="@this.OnVendorIdChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Product ID</td>
                 <td></td>
-                <td><input type="text" value="@this.Context.ProductId" @onchange="this.OnProductIdChangedAsync" /></td>
+                <td><input type="text" class="text-monospace" value="@this.Context.ProductId" @onchange="this.OnProductIdChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Lighting</td>
@@ -40,22 +40,22 @@
             <tr>
                 <td>Matrix</td>
                 <td>Rows</td>
-                <td><input type="number" value="@this.Context.Rows" @onchange="this.OnRowsChangedAsync" /></td>
+                <td><input type="number" class="text-monospace" value="@this.Context.Rows" @onchange="this.OnRowsChangedAsync" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td>Cols</td>
-                <td><input type="number" value="@this.Context.Cols" @onchange="@this.OnColsChangedAsync" /></td>
+                <td><input type="number" class="text-monospace" value="@this.Context.Cols" @onchange="@this.OnColsChangedAsync" /></td>
             </tr>
             <tr>
                 <td>Layouts</td>
                 <td>Labels</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="1" value="@this.Context.Labels" @onchange="@this.OnLabelsChangedAsync" /></td>
+                <td><textarea class="text-monospace text-nowrap" style="width:100%" spellcheck="false" rows="1" value="@this.Context.Labels" @onchange="@this.OnLabelsChangedAsync" /></td>
             </tr>
             <tr>
                 <td></td>
                 <td valign="top">Keymap</td>
-                <td><textarea style="font-family: monospace; width:100%" rows="10" value="@this.Context.Keymap" @onchange="@this.OnKeymapChangedAsync" /></td>
+                <td><textarea class="text-monospace text-nowrap" style="width:100%" spellcheck="false" rows="10" value="@this.Context.Keymap" @onchange="@this.OnKeymapChangedAsync" /></td>
             </tr>
         </tbody>
     </table>
