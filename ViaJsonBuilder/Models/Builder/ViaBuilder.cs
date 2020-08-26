@@ -65,6 +65,7 @@ namespace ViaJsonBuilder.Models.Builder
             }
 
             var formatted = labels.Split(",")
+                .Select(x => x.Trim())
                 .Select(x =>
                 {
                     if (x.StartsWith("[") && !x.EndsWith("]"))
@@ -81,12 +82,7 @@ namespace ViaJsonBuilder.Models.Builder
                 })
                 .JoinComma();
 
-            if (!formatted.StartsWith("["))
-            {
-                formatted = $"[{formatted}]";
-            }
-
-            return JsonSerializer.Deserialize<IEnumerable<object>>(formatted);
+            return JsonSerializer.Deserialize<IEnumerable<object>>($"[{formatted}]");
         }
 
         private object GetKeymap(ViaContext context)
@@ -98,7 +94,7 @@ namespace ViaJsonBuilder.Models.Builder
                 return default;
             }
 
-            if(Regex.IsMatch(keymap, @"^\s*\[\s*\[(.+,?\s*)*\]\s*\]\s*$"))
+            if (Regex.IsMatch(keymap, @"^\s*\[\s*\[\s*((.+,?\s*)*)\s*\]\s*\]\s*$"))
             {
                 return JsonSerializer.Deserialize<object>(keymap);
             }

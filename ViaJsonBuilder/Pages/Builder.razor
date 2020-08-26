@@ -50,7 +50,11 @@
             <tr>
                 <td>Layouts</td>
                 <td>Labels</td>
-                <td><textarea class="text-monospace text-nowrap" style="width:100%" spellcheck="false" rows="1" value="@this.Context.Labels" @onchange="@this.OnLabelsChangedAsync" /></td>
+                <td>
+                    <span class="text-monospace">[</span>
+                    <textarea class="text-monospace text-nowrap" style="width:100%" spellcheck="false" rows="4" value="@this.Context.Labels" @onchange="@this.OnLabelsChangedAsync" />
+                    <span class="text-monospace">]</span>
+                </td>
             </tr>
             <tr>
                 <td></td>
